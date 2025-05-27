@@ -1,0 +1,15 @@
+{
+  "serve_static_dirpath": "./docs",
+  "serve_port": 3000,
+  "website_url": "https://rybl.net",
+  "website_name": "rybl.net",
+  "watchers_dirpaths": ["./src", "./assets"],
+  "output_dir": "./docs",
+  "input_dir": "./assets",
+  "placeholder_favicon_filepath": "/placeholder_favicon.png",
+  "using_cache": true,
+  "fetch_timeout": 5000,
+  "using_batched_posts": true,
+  "batched_posts_batch_size": 10,
+  "ignored_assets_regexps": ["\\.DS_Store"]
+}
