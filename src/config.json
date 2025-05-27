@@ -1,15 +1,14 @@
 {
-  "serve_static_dirpath": "./docs",
-  "serve_port": 3000,
-  "website_url": "https://rybl.net",
-  "website_name": "rybl.net",
-  "watchers_dirpaths": ["./src", "./assets"],
-  "output_dir": "./docs",
-  "input_dir": "./assets",
-  "placeholder_favicon_filepath": "/placeholder_favicon.png",
+  "dirpath_of_serve": "./docs",
+  "port_of_serve": 3000,
+  "url_of_website": "https://rybl.net",
+  "name_of_website": "rybl.net",
+  "dirpaths_of_watchers": ["./src", "./input"],
+  "dirpath_of_output": "./docs",
+  "dirpath_of_input": "./input",
+  "route_of_placeholder_favicon": "/placeholder_favicon.png",
+  "timeout_of_fetch": 5000,
+  "size_of_batched_posts_batch": 10,
   "using_cache": true,
-  "fetch_timeout": 5000,
-  "using_batched_posts": true,
-  "batched_posts_batch_size": 10,
-  "ignored_assets_regexps": ["\\.DS_Store"]
+  "using_batched_posts": true
 }

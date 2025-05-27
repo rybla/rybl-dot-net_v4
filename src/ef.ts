@@ -2,9 +2,9 @@ import * as fs from "fs/promises";
 import * as fsSync from "fs";
 import path from "path";
 import config from "@/config.json";
-import { indentString } from "@/util";
+import { indentString, type Record } from "@/util";
 
-export type T<A, B = void> = (input: A) => (ctx: Ctx.T) => Promise<B>;
+export type T<A = unknown, B = void> = (input: A) => (ctx: Ctx.T) => Promise<B>;
 
 export namespace Ctx {
   export type T = {
@@ -23,18 +23,30 @@ export namespace Ctx {
 export class EfError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = "EffectError";
+    this.name = "EfError";
   }
 }
 
-const label = (name: string, args: object, content: string) =>
-  `${name}(${JSON.stringify(args)}): ${content}`;
+export const label = (name: string, args: any, content?: string) =>
+  `${name}(${JSON.stringify(args)})${content === undefined ? "" : `: ${content}`}`;
 
 export const tell: T<string> = (content) => async (ctx) => {
   if (ctx.tell_mode.type === "console") {
     console.log(indentString(ctx.depth, content));
   } else if (ctx.tell_mode.type === "writer") {
     ctx.tell_mode.tells.push({ depth: ctx.depth, content });
+  }
+};
+
+export const tellJSON: T<any> = (r) => async (ctx) => {
+  const s = JSON.stringify(r, null, 2);
+  if (ctx.tell_mode.type === "console") {
+    console.log(indentString(ctx.depth, s));
+  } else if (ctx.tell_mode.type === "writer") {
+    ctx.tell_mode.tells.push({
+      depth: ctx.depth,
+      content: s,
+    });
   }
 };
 
@@ -60,7 +72,7 @@ export const run: <A, B>(
 };
 
 export const getCache =
-  <A>(input: { key: string; default: T<{}, A> }) =>
+  <A>(input: { key: string; default: T<unknown, A> }) =>
   async (ctx: Ctx.T): Promise<A> => {
     await tell(`get cache at "${input.key}"`)(ctx);
     const filepath = `cache/${input.key}.json`;
@@ -85,7 +97,7 @@ export const inputFile_text: T<{ filepath_relative: string }, string> =
   (input) => async (ctx) => {
     try {
       const filepath_input = path.join(
-        config.input_dir,
+        config.dirpath_of_input,
         input.filepath_relative,
       );
       return await fs.readFile(filepath_input, {
@@ -102,7 +114,7 @@ export const outputFile_text: T<{
 }> = (input) => async (ctx) => {
   try {
     const filepath_output = path.join(
-      config.output_dir,
+      config.dirpath_of_output,
       input.filepath_relative,
     );
     await fs.mkdir(path.dirname(filepath_output), {
@@ -119,7 +131,10 @@ export const outputFile_text: T<{
 export const inputDir: T<{ dirpath_relative: string }, string[]> =
   (input) => async (ctx) => {
     try {
-      const dirpath_input = path.join(config.input_dir, input.dirpath_relative);
+      const dirpath_input = path.join(
+        config.dirpath_of_input,
+        input.dirpath_relative,
+      );
       const files_input = await fs.readdir(dirpath_input);
       return files_input;
     } catch (e: any) {
@@ -127,15 +142,16 @@ export const inputDir: T<{ dirpath_relative: string }, string[]> =
     }
   };
 
-export const useLocalFile: T<{ filepath_relative: string }, string> =
+export const useLocalFile: T<{ filepath_relative: string }, string> = run(
+  { label: (input) => `useLocalFile("${input.filepath_relative}" ==> ~)` },
   (input) => async (ctx) => {
     try {
       const filepath_input = path.join(
-        config.input_dir,
+        config.dirpath_of_input,
         input.filepath_relative,
       );
       const filepath_output = path.join(
-        config.output_dir,
+        config.dirpath_of_output,
         input.filepath_relative,
       );
       await fs.mkdir(path.dirname(filepath_output), {
@@ -146,36 +162,42 @@ export const useLocalFile: T<{ filepath_relative: string }, string> =
     } catch (e: any) {
       throw new EfError(label("useLocalFile", input, e.toString()));
     }
-  };
+  },
+);
 
-export const useRemoteFile: T<{ url: string; filepath_relative: string }> =
-  (input) => async (ctx) => {
-    try {
-      const filepath_output = path.join(
-        config.output_dir,
-        input.filepath_relative,
-      );
-      if (fsSync.existsSync(filepath_output)) {
-        // already downloaded, so, don't need to download again
-        return;
-      } else {
-        const response = await fetch(input.url, {
-          redirect: "follow",
-          signal: AbortSignal.timeout(config.fetch_timeout),
-        });
-        if (!response.ok)
-          throw new Error(`Failed to download file from ${input.url}`);
-        const blob = await response.blob();
-        const arrayBuffer = await blob.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        await fs.mkdir(path.dirname(filepath_output), { recursive: true });
-        await fs.writeFile(filepath_output, buffer);
-        await tell(`Downloaded ${input.url} to ${filepath_output}`)(ctx);
+export const useRemoteFile: T<{ href: string; filepath_relative: string }> =
+  run(
+    {
+      label: (input) =>
+        label("useRemoteFile", input, `to ${input.filepath_relative}`),
+    },
+    (input) => async (ctx) => {
+      try {
+        const filepath_output = path.join(
+          config.dirpath_of_output,
+          input.filepath_relative,
+        );
+        if (fsSync.existsSync(filepath_output)) {
+          // already downloaded, so, don't need to download again
+          return;
+        } else {
+          const response = await fetch(input.href, {
+            redirect: "follow",
+            signal: AbortSignal.timeout(config.timeout_of_fetch),
+          });
+          if (!response.ok)
+            throw new Error(`Failed to download file from ${input.href}`);
+          const blob = await response.blob();
+          const arrayBuffer = await blob.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+          await fs.mkdir(path.dirname(filepath_output), { recursive: true });
+          await fs.writeFile(filepath_output, buffer);
+        }
+      } catch (e: any) {
+        throw new EfError(label("useRemoteFile", input, e.toString()));
       }
-    } catch (e: any) {
-      throw new EfError(label("useRemoteFile", input, e.toString()));
-    }
-  };
+    },
+  );
 
 export const defined: <A>(
   a: A | undefined | null,
@@ -185,6 +207,11 @@ export const defined: <A>(
   if (a === null) throw new EfError("expected to be defined, but was null");
   return a;
 };
+
+export const pure =
+  <A>(a: A) =>
+  (ctx: Ctx.T) =>
+    a;
 
 export const all =
   <Input, Output>(input: {
@@ -223,6 +250,7 @@ export const all =
     return results;
   };
 
-export const todo = <A>(msg: string): A => {
-  throw new EfError(`[TODO]\n${msg}`);
+export const todo = <A>(msg?: string): A => {
+  if (msg === undefined) throw new EfError(`[TODO]`);
+  else throw new EfError(`[TODO]\n${msg}`);
 };

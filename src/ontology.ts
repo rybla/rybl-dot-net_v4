@@ -44,7 +44,6 @@ export type Resource = MarkdownResource | HtmlResource | RawResource;
  */
 export type ResourceBase = {
   route: string;
-  name: string;
   references: Reference[];
   metadata: ResourceMetadata;
 };
@@ -61,6 +60,7 @@ export type HtmlResource = ResourceBase & {
 
 export type ResourceMetadata = z.infer<typeof ResourceMetadata_Schema>;
 export const ResourceMetadata_Schema = z.object({
+  name: z.optional(z.string()),
   pubDate: z.optional(z.string()),
   tags: z.optional(z.array(z.string())),
   abstract: z.optional(z.string()),
@@ -70,14 +70,18 @@ export type RawResource = ResourceBase & {
   type: "raw";
 };
 
-export type Reference = {
-  url: string;
-  name?: string;
-  icon_url?: string;
-};
+export type Reference =
+  | ({ type: "external" } & ExternalReference)
+  | ({ type: "internal" } & InternalReference);
 
-export const fromResourceToReference = (res: Resource): Reference => ({
-  name: res.name,
-  url: res.route,
-  icon_url: `favicon.ico`,
-});
+export type ExternalReference = { url: URL };
+export type InternalReference = { route: string };
+
+export const getHref_of_Reference = (ref: Reference) => {
+  switch (ref.type) {
+    case "internal":
+      return ref.route;
+    case "external":
+      return ref.url.href;
+  }
+};
