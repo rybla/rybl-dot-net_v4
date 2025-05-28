@@ -38,7 +38,7 @@ const parsePosts: ef.T<unknown, Resource[]> = ef.run(
     const resources: Resource[] = (
       await ef.all<{}, Resource[]>({
         opts: { batch_size: config.size_of_batched_posts_batch },
-        ks: (await ef.inputDir({ dirpath_relative: "post" })(ctx)).map(
+        ks: (await ef.getRoutes({ dirpath_relative: "post" })(ctx)).map(
           (filepath) =>
             ef.run(
               {
@@ -46,7 +46,7 @@ const parsePosts: ef.T<unknown, Resource[]> = ef.run(
                   await ef.tell(`${e}`)(ctx);
                   return [
                     {
-                      route: filepath,
+                      route: filepath.replace(".md", ".html"),
                       references: [],
                       metadata: {},
                       type: "markdown",
@@ -76,8 +76,8 @@ const parsePosts: ef.T<unknown, Resource[]> = ef.run(
 const parsePost: ef.T<{ filepath: string }, Resource> = ef.run(
   { label: (input) => ef.label("parsePost", input.filepath) },
   (input) => async (ctx) => {
-    const content = await ef.inputFile_text({
-      filepath_relative: `post/${input.filepath}`,
+    const content = await ef.getRoute_textFile({
+      route: `post/${input.filepath}`,
     })(ctx);
 
     const root = unified()
@@ -89,7 +89,7 @@ const parsePost: ef.T<{ filepath: string }, Resource> = ef.run(
       .parse(content);
 
     return {
-      route: input.filepath,
+      route: input.filepath.replace(".md", ".html"),
       references: [],
       metadata: {},
       type: "markdown",

@@ -1,0 +1,49 @@
+<h1>Aligned Intelligence and Moral Progress</h1>
+<h2>Robin Hanson on AI</h2>
+<p>Robin Hanson's blog: <a href="https://www.overcomingbias.com/">Overcoming Bias</a>.</p>
+<p>I've been reading/listening to some Hanson recently on the topic of the future of humanity and the AI it could create.</p>
+<ul>
+<li><a href="https://www.overcomingbias.com/p/ai-fear-is-mostly-fear-of-future">Most AI Fear Is Future Fear</a></li>
+<li><a href="https://www.overcomingbias.com/p/types-of-partiality">Types of Partiality</a></li>
+<li><a href="https://www.overcomingbias.com/p/fertile-factions">Fertile Factors</a></li>
+<li><a href="https://www.overcomingbias.com/p/ai-risk-convo-synthesis">AI Risk Convo Synthesis</a></li>
+<li><a href="https://www.overcomingbias.com/p/which-of-your-origins-are-you">Which Of Your Origins Are You?</a></li>
+<li><a href="https://www.overcomingbias.com/p/to-imagine-ai-imagine-no-ai">To Imagine AI, Imagine No AI</a></li>
+<li><a href="https://m.youtube.com/watch?v=9XuVn6nljCM">Zvi Mowshowitz &#x26; Robin Hanson Discuss AI Risk</a></li>
+</ul>
+<p>Of course, Hanson has been publicly writing and discussing the future of AI since at least 2008 (viz <a href="https://www.lesswrong.com/tag/the-hanson-yudkowsky-ai-foom-debate">The Hanson-Yudkowsky AI-Foom Debate</a>, and <a href="https://www.lesswrong.com/posts/gGSvwd62TJAxxhcGh/yudkowsky-vs-hanson-on-foom-whose-predictions-were-better">Yudkowsky vs Hanson on FOOM: Whose Predictions Were Better?</a>), but the topic has attracted a lot more attention recently due to recent advances in AI technology as well as some popular figures (including Yudkowsky himself) warning about a likely imminent AI doomsday.</p>
+<p>In terms of the possibility that human-level AI (defined as an AI agent that can do any tasks that a general human can do for the same or cheaper cost) will arise in the near-term future, it appears that Hanson has similar views to [me]{{ site.baseurl }}{% post_url 2023-04-03-ai-danger %}) -- that is, its very unlikely.</p>
+<p>However, Hanson has found a different interesting and much less explored aspect to future of AI discussion, in particular relating to the alignment problem.</p>
+<h2>The AI Alignment Problem</h2>
+<p>Here, <em>AI alignment</em> is the correspondence of an AI system's interests (however they are manifested in its behaviors) with "human interests" (which are usually only vaguely or implicitly defined). The <em>AI alignment problem</em> is the problem of programmatically ensuring the alignment of an AI system, even if it is much more intelligent and powerful than humanity as a whole.</p>
+<p>The problem is non-trivial since, even if you have the ability to exactly specify rules that the AI <em>must</em> obey, its difficult to specify the <em>right</em> rules that capture <em>everything</em> that is in "human interests."</p>
+<p>There are many classic examples of where a seemingly obviously-good directive could lead a powerful AI to cause much harm in a way that still does not violate the rules. One example:</p>
+<blockquote>
+<p>The programmers tell the AI to eliminate global poverty. So, the AI kills every poor person.</p>
+</blockquote>
+<p>In reality, real AI systems are programmed much more carefully of course. But, it is extremely difficult to prove definitively that a given AI system will <em>not</em> find some unexpected way to satisfy its goals that involves contradicting some implicit interests of the programmer (note that this is true regardless of whether the programmer truly has "human interests" in their heart or not).</p>
+<h2>The Human Alignment Problem</h2>
+<p>The idea of alignment and the alignment problem abstracted in this way was inspired by considering AI agents. But, of course, there is not reason why these considerations would not apply to all intelligent agents as well. Including humans.</p>
+<p>In my own categorization, there are two flavors of human alignment problems:</p>
+<ol>
+<li>The <em>easy human alignment problem</em> is the problem of cooperation among humans. Although humans share many goals in common, they also compete for resources and have slightly different moral judgements. Solving the easy human alignment problem amounts to universal human cooperation.</li>
+<li>The <em>hard human alignment problem</em> is the problem of various generations of humans having different interests. Humans living 2000 years ago had very different beliefs about what is in humanity's interests from humans living today, on a scale that increases with time. Conversely, we should also expect that humans living 2000 years in the future will appear very immoral to humans living today. The problem with this, of course, is that humans living today don't want humans to be like that in the future. However, humans today are moslty proud of the moral progress that humanity has made in the last 2000 years.</li>
+</ol>
+<p>The easy human alignment problem takes the interests of existing humans as fixed, and it becomes essentially a game theoretical problem of how to behave in such a system so as to lead to the best results.</p>
+<p>The hard human alignment problem is more intractable, because it brings into question who's interests are to be considered for alignment with. With enough time, future humanity's interests will become incompatible with current humanity's interests, however broadly defined.</p>
+<h2>The Descendant Alignment Problem</h2>
+<p>Considering this type of alignment problem for purely abstract agents:</p>
+<p>The <em>descendant alignment problem</em> is the problem of aligning the interests of a given agent with any future descendants of that agent.</p>
+<p>So, the hard human alignement problem is the instance of the descendant alignment problem for humans.</p>
+<p>For an abstract agent, the descendant alignment problem is not necessarily very difficult. If the agent decides to create future generations, it is sufficient for it to create them in such a way that preserves its interests with high fidelity. Cloning (or cloning-with-recombination i.e. sexual reproduction) with error correction could meet those ends, given sufficient fidelity. Of course, a human's own construction is basically this -- DNA contains many error correction mechanisms in order to account for mutations and inaccuracies in the DNA transfered to a child. But, even so, there are non-zero errors, which eventually leads to large mutations after many generations. The important comparison to make is between the interests of the parent and the descendants, not necessarily the exact DNA.</p>
+<p>For biological organisms, cloning is a very difficult feat as there are so many opportunities for error in the biological reproductive processes. But, clearly, any reproductive agent has a very strong incentive to preserve their interests in their descendants, over which they have so much influence.</p>
+<h2>Future Alignement among AI Agents</h2>
+<p>I expect that advanced (not necessarily superhuman intelligent) AI agents will face this issue in an interesting way, since the code that abstracts their interests is actually very well organized and preservable compared to biological processes. It is much more feasible that an advanced AI agent could fairly easily clone themselves such as to exactly preserve their interests many many magnitudes better than humans could. One consequence of this is that in a "FOOM" scenario, a generation of the AI agents will understand that, if they iterate to create more advanced AI agents, they will diverge too much in their interests, and they will have the power to prevent that next generation from being developed. So the FOOM will probably stop there.</p>
+<h2>Competative Facts and Future Alignement of Humans</h2>
+<p>Of course, there are other considerations when a generation of agents is deciding how to reproduce. For example, if there are competing agents that already have very different interests, then the current generation of agents might prefer to reproduce a slightly misaligned next generation rather than let the competing agents overwhelm them first. Over time, this would lead to more and more misaligned future generations, but would still be preferable to the competing agents taking over and being misaligned with them anyway.</p>
+<p>I think this applies to humanity as well, in a universe with alien species that have very different interests. Even if humanity reproduces into more and more misaligned future generations, those future generations may still be preferable to current humans than even more misaligned aliens taking over because humanity stalled in the development race.</p>
+<h2>The Myth of Moral Progress</h2>
+<p>This perspective on future alignement suggests a suprising answer to why humanity has appeared to have made so much moral progress. That is, because its a tautology.</p>
+<p>Current humans generally prefer to do things that lead to results they consider good, as did past humans. But there was a gradual transition in the interests of past humans to the interests of current humans -- a transition that we call progress.</p>
+<p>Not that this is a very general observation, so of course it does not apply to every difference between past and current humans. For example, past humans considered some things to be bad that we now don't consider to be bad purely for environmental reasons that have changed between the generations e.g. some past humans considered slavery to be immoral, as do many current humans, but practiced it anyway because they believed it was in their situation required for the greater good.</p>
+<p>Under this theory, there should be a tendancy for each human generation to consider more recent generations to be more moral as compared to older generations.</p>

@@ -1,8 +1,8 @@
-import * as fs from "fs/promises";
-import * as fsSync from "fs";
-import path from "path";
 import config from "@/config.json";
-import { indentString, type Record } from "@/util";
+import { indentString } from "@/util";
+import * as fsSync from "fs";
+import * as fs from "fs/promises";
+import path from "path";
 
 export type T<A = unknown, B = void> = (input: A) => (ctx: Ctx.T) => Promise<B>;
 
@@ -93,13 +93,10 @@ export const withCache: T<void, void> = (input) => async (ctx) => {
   // TODO: wrapper around using cached values
 };
 
-export const inputFile_text: T<{ filepath_relative: string }, string> =
+export const getRoute_textFile: T<{ route: string }, string> =
   (input) => async (ctx) => {
     try {
-      const filepath_input = path.join(
-        config.dirpath_of_input,
-        input.filepath_relative,
-      );
+      const filepath_input = path.join(config.dirpath_of_input, input.route);
       return await fs.readFile(filepath_input, {
         encoding: "utf8",
       });
@@ -108,15 +105,12 @@ export const inputFile_text: T<{ filepath_relative: string }, string> =
     }
   };
 
-export const outputFile_text: T<{
-  filepath_relative: string;
+export const setRoute_textFile: T<{
+  route: string;
   content: string;
 }> = (input) => async (ctx) => {
   try {
-    const filepath_output = path.join(
-      config.dirpath_of_output,
-      input.filepath_relative,
-    );
+    const filepath_output = path.join(config.dirpath_of_output, input.route);
     await fs.mkdir(path.dirname(filepath_output), {
       recursive: true,
     });
@@ -128,7 +122,7 @@ export const outputFile_text: T<{
   }
 };
 
-export const inputDir: T<{ dirpath_relative: string }, string[]> =
+export const getRoutes: T<{ dirpath_relative: string }, string[]> =
   (input) => async (ctx) => {
     try {
       const dirpath_input = path.join(
@@ -142,18 +136,12 @@ export const inputDir: T<{ dirpath_relative: string }, string[]> =
     }
   };
 
-export const useLocalFile: T<{ filepath_relative: string }, string> = run(
-  { label: (input) => `useLocalFile("${input.filepath_relative}" ==> ~)` },
+export const useLocalFile: T<{ route: string }, string> = run(
+  { label: (input) => `useLocalFile("${input.route}" ==> ~)` },
   (input) => async (ctx) => {
     try {
-      const filepath_input = path.join(
-        config.dirpath_of_input,
-        input.filepath_relative,
-      );
-      const filepath_output = path.join(
-        config.dirpath_of_output,
-        input.filepath_relative,
-      );
+      const filepath_input = path.join(config.dirpath_of_input, input.route);
+      const filepath_output = path.join(config.dirpath_of_output, input.route);
       await fs.mkdir(path.dirname(filepath_output), {
         recursive: true,
       });
@@ -165,39 +153,34 @@ export const useLocalFile: T<{ filepath_relative: string }, string> = run(
   },
 );
 
-export const useRemoteFile: T<{ href: string; filepath_relative: string }> =
-  run(
-    {
-      label: (input) =>
-        label("useRemoteFile", input, `to ${input.filepath_relative}`),
-    },
-    (input) => async (ctx) => {
-      try {
-        const filepath_output = path.join(
-          config.dirpath_of_output,
-          input.filepath_relative,
-        );
-        if (fsSync.existsSync(filepath_output)) {
-          // already downloaded, so, don't need to download again
-          return;
-        } else {
-          const response = await fetch(input.href, {
-            redirect: "follow",
-            signal: AbortSignal.timeout(config.timeout_of_fetch),
-          });
-          if (!response.ok)
-            throw new Error(`Failed to download file from ${input.href}`);
-          const blob = await response.blob();
-          const arrayBuffer = await blob.arrayBuffer();
-          const buffer = Buffer.from(arrayBuffer);
-          await fs.mkdir(path.dirname(filepath_output), { recursive: true });
-          await fs.writeFile(filepath_output, buffer);
-        }
-      } catch (e: any) {
-        throw new EfError(label("useRemoteFile", input, e.toString()));
+export const useRemoteFile: T<{ href: string; route: string }> = run(
+  {
+    label: (input) => label("useRemoteFile", input, `to ${input.route}`),
+  },
+  (input) => async (ctx) => {
+    try {
+      const filepath_output = path.join(config.dirpath_of_output, input.route);
+      if (fsSync.existsSync(filepath_output)) {
+        // already downloaded, so, don't need to download again
+        return;
+      } else {
+        const response = await fetch(input.href, {
+          redirect: "follow",
+          signal: AbortSignal.timeout(config.timeout_of_fetch),
+        });
+        if (!response.ok)
+          throw new Error(`Failed to download file from ${input.href}`);
+        const blob = await response.blob();
+        const arrayBuffer = await blob.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        await fs.mkdir(path.dirname(filepath_output), { recursive: true });
+        await fs.writeFile(filepath_output, buffer);
       }
-    },
-  );
+    } catch (e: any) {
+      throw new EfError(label("useRemoteFile", input, e.toString()));
+    }
+  },
+);
 
 export const defined: <A>(
   a: A | undefined | null,

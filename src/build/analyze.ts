@@ -117,7 +117,7 @@ const useFaviconsOfReferences: ef.T<{ references: Reference[] }> = ef.run(
       ks: Array.from(externalReferences).map((ref) => () => async (ctx) => {
         await ef.useRemoteFile({
           href: `${getHostHref(ref.url)}/favicon.ico`,
-          filepath_relative: `${fromUrlToFilename(ref.url)}.ico`,
+          route: `${fromUrlToFilename(ref.url)}.ico`,
         })(ctx);
       }),
     })(ctx);
