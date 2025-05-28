@@ -38,8 +38,8 @@ const generateMarkdown: ef.T<{ resource: MarkdownResource }> = ef.run(
       .run(input.resource.root);
     const content = unified()
       //
-      .use(rehypeFormat)
-      .use(rehypeStringify)
+      .use(rehypeFormat, {})
+      .use(rehypeStringify, {})
       .stringify(root_hast);
 
     await ef.setRoute_textFile({

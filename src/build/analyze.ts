@@ -1,6 +1,10 @@
 import * as ef from "@/ef";
 import {
+  fromHref_to_Reference,
+  getHostHref_of_URL,
   getHref_of_Reference,
+  getIconHref_of_URL,
+  getIconRoute_of_URL,
   ResourceMetadata_Schema,
   type ExternalReference,
   type Reference,
@@ -11,11 +15,13 @@ import {
   dedup,
   dedupInPlace,
   do_,
-  fromUrlToFilename,
-  getHostHref,
+  fromHrefToRouteOrURL,
+  isoHref,
+  schemaHref,
 } from "@/util";
 import { visit } from "unist-util-visit";
 import YAML from "yaml";
+import * as transforms from "./analyze/transforms";
 
 export const analyzeWebsite: ef.T<{
   website: Website;
@@ -34,9 +40,11 @@ export const analyzeWebsite: ef.T<{
         input: {},
         ks: do_(() => {
           const ks: ef.T[] = [];
-          visit(resource.root, (node) =>
+          visit(resource.root, (node) => {
+            // ef.tellSync(`[before] node type: ${node.type}`)(ctx);
             ks.push(
               ef.run({}, () => async (ctx) => {
+                // ef.tellSync(`[after] node type: ${node.type}`)(ctx);
                 switch (node.type) {
                   case "yaml": {
                     const frontmatter = YAML.parse(node.value);
@@ -50,46 +58,45 @@ export const analyzeWebsite: ef.T<{
                       resource.metadata.name === showNode(node);
                     break;
                   }
+                  case "textDirective": {
+                    break;
+                  }
                   //
                   case "link": {
-                    if (node.url.startsWith("/")) {
-                      const href = node.url;
-                      const ref: Reference = {
-                        type: "internal",
-                        route: href,
-                      };
+                    try {
+                      const href = await ef.successulSafeParse(
+                        schemaHref.safeParse(node.url),
+                      )(ctx);
+                      const ref = fromHref_to_Reference(href);
                       resource.references.push(ref);
                       references_global.push(ref);
-                    } else {
-                      try {
-                        const url = new URL(node.url);
-                        const ref: Reference = { type: "external", url };
-                        resource.references.push(ref);
-                        references_global.push(ref);
-                      } catch (e: any) {
-                        await ef.tell(`Invalid link url "${node.url}": ${e}`)(
-                          ctx,
-                        );
-                      }
+
+                      await transforms.addPrefixIconToLink({ link: node })(ctx);
+                    } catch (e: any) {
+                      await ef.tell(`Invalid link: ${e}`)(ctx);
                     }
                     break;
                   }
                 }
               }),
-            ),
-          );
+            );
+          });
           return ks;
         }),
       })(ctx);
 
       // dedup references
       resource.references = Array.from(
-        dedup(resource.references, getHref_of_Reference),
+        dedup(resource.references, (x) =>
+          isoHref.unwrap(getHref_of_Reference(x)),
+        ),
       );
     }
   }
 
-  dedupInPlace(references_global, getHref_of_Reference);
+  dedupInPlace(references_global, (x) =>
+    isoHref.unwrap(getHref_of_Reference(x)),
+  );
 
   await useFaviconsOfReferences({ references: references_global })(ctx);
 });
@@ -107,7 +114,7 @@ const useFaviconsOfReferences: ef.T<{ references: Reference[] }> = ef.run(
               return [];
           }
         }),
-        (ref) => getHostHref(ref.url),
+        (ref) => isoHref.unwrap(getHostHref_of_URL(ref.value)),
       ),
     );
 
@@ -116,8 +123,8 @@ const useFaviconsOfReferences: ef.T<{ references: Reference[] }> = ef.run(
       input: {},
       ks: Array.from(externalReferences).map((ref) => () => async (ctx) => {
         await ef.useRemoteFile({
-          href: `${getHostHref(ref.url)}/favicon.ico`,
-          route: `${fromUrlToFilename(ref.url)}.ico`,
+          href: getIconHref_of_URL(ref.value),
+          route: getIconRoute_of_URL(ref.value),
         })(ctx);
       }),
     })(ctx);

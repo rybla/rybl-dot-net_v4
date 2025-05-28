@@ -1,4 +1,4 @@
-import config from "@/config.json";
+import * as config from "@/config";
 import express from "express";
 import http from "http";
 import { do_ } from "./util";

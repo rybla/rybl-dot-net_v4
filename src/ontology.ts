@@ -1,12 +1,22 @@
-import { z } from "zod";
-import * as ef from "./ef";
+import * as config from "@/config";
+import * as ef from "@/ef";
+import {
+  fromHrefToRouteOrURL,
+  fromRouteToHref,
+  fromUrlToFilename,
+  isoHref,
+  isoRoute,
+  type Href,
+  type Route,
+} from "@/util";
 import * as mdast from "mdast";
+import { z } from "zod";
 
 /**
  * Everything that describes a website.
  */
 export type Website = {
-  url: string;
+  url: URL;
   name: string;
   resources: Resource[];
 };
@@ -43,7 +53,7 @@ export type Resource = MarkdownResource | HtmlResource | RawResource;
  * A type common to all {@link Resource}s.
  */
 export type ResourceBase = {
-  route: string;
+  route: Route;
   references: Reference[];
   metadata: ResourceMetadata;
 };
@@ -74,14 +84,62 @@ export type Reference =
   | ({ type: "external" } & ExternalReference)
   | ({ type: "internal" } & InternalReference);
 
-export type ExternalReference = { url: URL };
-export type InternalReference = { route: string };
+export type ExternalReference = { value: URL };
+export type InternalReference = { value: Route };
 
-export const getHref_of_Reference = (ref: Reference) => {
+export const fromHref_to_Reference = (href: Href): Reference => {
+  const route_or_url = fromHrefToRouteOrURL(href);
+  switch (route_or_url.type) {
+    case "route": {
+      return {
+        type: "internal",
+        value: route_or_url.value,
+      };
+    }
+    case "url": {
+      return {
+        type: "external",
+        value: route_or_url.value,
+      };
+    }
+  }
+};
+
+export const getHref_of_Reference = (ref: Reference): Href => {
   switch (ref.type) {
     case "internal":
-      return ref.route;
+      return fromRouteToHref(ref.value);
     case "external":
-      return ref.url.href;
+      return getHref_of_URL(ref.value);
+  }
+};
+
+export const getIconRoute_of_Reference = (ref: Reference): Route => {
+  switch (ref.type) {
+    case "external":
+      return getIconRoute_of_URL(ref.value);
+    case "internal":
+      return config.route_of_placeholder_favicon;
+  }
+};
+
+export const getHref_of_URL = (url: URL): Href => isoHref.wrap(url.href);
+
+export const getHostHref_of_URL = (url: URL): Href =>
+  isoHref.wrap(`${url.protocol}//${url.hostname}`);
+
+export const getIconHref_of_URL = (url: URL): Href =>
+  isoHref.wrap(`${getHostHref_of_URL(url)}/favicon.ico`);
+
+export const getIconRoute_of_URL = (url: URL): Route =>
+  isoRoute.wrap(`${fromUrlToFilename(url)}.ico`);
+
+export const getIconRoute_of_Href = (href: Href): Route => {
+  const result = fromHrefToRouteOrURL(href);
+  switch (result.type) {
+    case "route":
+      return config.route_of_placeholder_favicon;
+    case "url":
+      return getIconRoute_of_URL(result.value);
   }
 };

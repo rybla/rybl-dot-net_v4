@@ -1,3 +1,6 @@
+import { iso, type Newtype } from "newtype-ts";
+import { z } from "zod";
+
 export type Record = { [key: string]: any };
 
 export const do_ = <A>(k: () => A) => k();
@@ -36,12 +39,6 @@ export const intercalate = <A>(xss: A[][], sep: A[]): A[] => {
   for (const xs of xss.slice(-1)) ys.push(...xs);
   return ys;
 };
-
-// export const defined = <A>(a: A | undefined | null): A => {
-//   if (a === undefined) throw Error("expected to be defined, but was undefined");
-//   if (a === null) throw Error("expected to be defined, but was null");
-//   return a;
-// };
 
 export const ifDefined = <A, B>(
   a: A | undefined | null,
@@ -88,21 +85,6 @@ export const dedupInPlace = <A>(xs: A[], getId: (x: A) => string): void => {
   xs.length = writeIndex;
 };
 
-export const getHostHref = (url: URL) => `${url.protocol}//${url.hostname}`;
-
-export function toSafeFilename(
-  input: string,
-  defaultName: string = "untitled",
-): string {
-  let filename = input.trim();
-  if (filename === "") return defaultName;
-  filename = filename.replaceAll(/[<>:"/\\|?*\x00-\x1F]/g, "_");
-  filename = filename.replaceAll(/_+/g, "_");
-  filename = filename.replaceAll(/^_+|_+$/g, "");
-  if (filename === "") return defaultName;
-  return filename;
-}
-
 /**
  * Converts a {@link URL} to a safe filename by replacing characters that are
  * not valid in filenames, which still keeping the {@link URL} looking mostly
@@ -134,3 +116,86 @@ export function fromUrlToFilename(url: URL): string {
 
   return filename;
 }
+
+// TODO: does this actually work well?
+export function fromStringToFilename(
+  input: string,
+  defaultName: string = "untitled",
+): string {
+  let filename = input.trim();
+  if (filename === "") return defaultName;
+  filename = filename.replaceAll(/[<>:"/\\|?*\x00-\x1F]/g, "_");
+  filename = filename.replaceAll(/_+/g, "_");
+  filename = filename.replaceAll(/^_+|_+$/g, "");
+  if (filename === "") return defaultName;
+  return filename;
+}
+
+export interface Filename
+  extends Newtype<{ readonly tagFilename: unique symbol }, string> {}
+export const isoFilename = iso<Filename>();
+const regexFilename = /^(?!^\.$|^\.\.$)[^\/:]+$/;
+export const schemaFilename = z
+  .string()
+  .regex(regexFilename)
+  .transform(isoFilename.wrap);
+
+export interface RelativeFilepath
+  extends Newtype<{ readonly tagFilepath: unique symbol }, string> {}
+export const isoRelativeFilepath = iso<RelativeFilepath>();
+const regexRelativeFilepath = /^[^/]+(?:\/[^\/]+)*\/?$/;
+export const schemaRelativeFilepath = z
+  .string()
+  .regex(regexRelativeFilepath)
+  .transform(isoRelativeFilepath.wrap);
+
+export const schemaURL = z
+  .string()
+  .url()
+  .transform((s) => new URL(s));
+
+export const fromHrefToRouteOrURL = (
+  href: Href,
+): { type: "route"; value: Route } | { type: "url"; value: URL } => {
+  const href_string = isoHref.unwrap(href);
+  if (href_string.startsWith("/")) {
+    return { type: "route", value: schemaRoute.parse(href) };
+  } else {
+    return { type: "url", value: new URL(href_string) };
+  }
+};
+
+/**
+ * A {@link Route} is a path to access a resource in the {@link Website}.
+ */
+export interface Route
+  extends Newtype<{ readonly tagRoute: unique symbol }, string> {}
+export const isoRoute = iso<Route>();
+export const schemaRoute = z
+  .string()
+  .refine((s) => s.startsWith("/"), `a Route must start with a "/"`)
+  .refine((s) => !s.includes(":"), `a Route cannot include ":"`)
+  .transform(isoRoute.wrap);
+
+export const fromRouteToHref = (route: Route): Href =>
+  isoHref.wrap(`/${isoRoute.unwrap(route)}`);
+
+export const fromHrefToRoute = (href: Href): Route | undefined => {
+  const href_string = isoHref.unwrap(href);
+  if (href_string.startsWith("/")) return isoRoute.wrap(href_string.slice(1));
+};
+
+export const joinRoutes = (...rs: Route[]): Route =>
+  schemaRoute.parse(rs.map(isoRoute.unwrap).join(""));
+
+/**
+ * An {@link Href} is a hyper-reference that can be either local ("/" followed by a valid relative filepath) or remote (a valid URL).
+ * Local {@link Href}s always begin with "/".
+ */
+export interface Href
+  extends Newtype<{ readonly tagHref: unique symbol }, string> {}
+export const isoHref = iso<Href>();
+export const schemaHref = z.union([
+  schemaRoute.transform((r) => isoHref.wrap(isoRoute.unwrap(r))),
+  schemaURL.transform((url) => isoHref.wrap(url.href)),
+]);

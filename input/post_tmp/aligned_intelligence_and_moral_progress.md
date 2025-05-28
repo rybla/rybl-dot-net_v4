@@ -12,6 +12,7 @@ abstract: |
 ## Robin Hanson on AI
 
 Robin Hanson's blog: [Overcoming Bias](https://www.overcomingbias.com/).
+Robin Hanson's blog: [Overcoming Bias](https://www.overcomingbias.com/).
 
 I've been reading/listening to some Hanson recently on the topic of the future of humanity and the AI it could create.
 

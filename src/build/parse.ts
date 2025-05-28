@@ -1,4 +1,4 @@
-import config from "@/config.json";
+import * as config from "@/config";
 import * as ef from "@/ef";
 import {
   addResource,
@@ -6,6 +6,7 @@ import {
   type Resource,
   type Website,
 } from "@/ontology";
+import { isoRoute, schemaRoute, type Route } from "@/util";
 import remarkDirective from "remark-directive";
 import remarkFrontmatter from "remark-frontmatter";
 import remarkGfm from "remark-gfm";
@@ -16,7 +17,7 @@ import { unified } from "unified";
 export const parseWebsite: ef.T<unknown, Website> = ef.run(
   { label: "parseWebsite" },
   (input) => async (ctx) => {
-    const website = {
+    const website: Website = {
       name: config.name_of_website,
       url: config.url_of_website,
       resources: [],
@@ -38,33 +39,38 @@ const parsePosts: ef.T<unknown, Resource[]> = ef.run(
     const resources: Resource[] = (
       await ef.all<{}, Resource[]>({
         opts: { batch_size: config.size_of_batched_posts_batch },
-        ks: (await ef.getRoutes({ dirpath_relative: "post" })(ctx)).map(
-          (filepath) =>
-            ef.run(
-              {
-                catch: (e) => async (ctx) => {
-                  await ef.tell(`${e}`)(ctx);
-                  return [
-                    {
-                      route: filepath.replace(".md", ".html"),
-                      references: [],
-                      metadata: {},
-                      type: "markdown",
-                      root: {
-                        type: "root",
-                        children: [
-                          {
-                            type: "code",
-                            value: e.toString(),
-                          },
-                        ],
-                      },
-                    } as MarkdownResource,
-                  ];
-                },
+        ks: (
+          await ef.getSubRoutes({
+            route: schemaRoute.parse("/post"),
+          })(ctx)
+        ).map((route) =>
+          ef.run(
+            {
+              catch: (e) => async (ctx) => {
+                await ef.tell(`${e}`)(ctx);
+                return [
+                  {
+                    route: isoRoute.modify((r) => r.replace(".md", ".html"))(
+                      route,
+                    ),
+                    references: [],
+                    metadata: {},
+                    type: "markdown",
+                    root: {
+                      type: "root",
+                      children: [
+                        {
+                          type: "code",
+                          value: e.toString(),
+                        },
+                      ],
+                    },
+                  } as MarkdownResource,
+                ];
               },
-              () => async (ctx) => [await parsePost({ filepath })(ctx)],
-            ),
+            },
+            () => async (ctx) => [await parsePost({ route: route })(ctx)],
+          ),
         ),
         input: {},
       })(ctx)
@@ -73,12 +79,10 @@ const parsePosts: ef.T<unknown, Resource[]> = ef.run(
   },
 );
 
-const parsePost: ef.T<{ filepath: string }, Resource> = ef.run(
-  { label: (input) => ef.label("parsePost", input.filepath) },
+const parsePost: ef.T<{ route: Route }, Resource> = ef.run(
+  { label: (input) => ef.label("parsePost", input.route) },
   (input) => async (ctx) => {
-    const content = await ef.getRoute_textFile({
-      route: `post/${input.filepath}`,
-    })(ctx);
+    const content = await ef.getRoute_textFile({ route: input.route })(ctx);
 
     const root = unified()
       .use(remarkParse)
@@ -89,7 +93,7 @@ const parsePost: ef.T<{ filepath: string }, Resource> = ef.run(
       .parse(content);
 
     return {
-      route: input.filepath.replace(".md", ".html"),
+      route: isoRoute.modify((r) => r.replace(".md", ".html"))(input.route),
       references: [],
       metadata: {},
       type: "markdown",
