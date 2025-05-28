@@ -5,6 +5,7 @@ export const port_of_server = 3000;
 
 export const url_of_website = new URL("https://rybl.net");
 export const name_of_website = "rybl.net";
+export const route_of_favicon_of_website = schemaRoute.parse("/favicon.ico");
 
 export const dirpaths_of_watchers = ["./src", "./input"];
 

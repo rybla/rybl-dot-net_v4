@@ -2,28 +2,24 @@ import * as config from "@/config";
 import {
   indentString,
   isoHref,
-  isoRelativeFilepath,
+  isoFilepath,
   isoRoute,
   joinRoutes,
-  schemaRelativeFilepath,
+  schemaFilepath,
   schemaRoute,
   type Href,
-  type RelativeFilepath,
+  type Filepath,
   type Route,
 } from "@/util";
-import path from "path";
 import * as fsSync from "fs";
 import * as fs from "fs/promises";
+import path from "path";
 import { z } from "zod";
 
-const fromRouteToInputFilepath = (r: Route): RelativeFilepath =>
-  schemaRelativeFilepath.parse(
-    path.join(config.dirpath_of_input, isoRoute.unwrap(r)),
-  );
-const fromRouteToOutputFilepath = (r: Route): RelativeFilepath =>
-  schemaRelativeFilepath.parse(
-    path.join(config.dirpath_of_output, isoRoute.unwrap(r)),
-  );
+const fromRouteToInputFilepath = (r: Route): Filepath =>
+  schemaFilepath.parse(path.join(config.dirpath_of_input, isoRoute.unwrap(r)));
+const fromRouteToOutputFilepath = (r: Route): Filepath =>
+  schemaFilepath.parse(path.join(config.dirpath_of_output, isoRoute.unwrap(r)));
 
 export type T<A = unknown, B = void> = (input: A) => (ctx: Ctx.T) => Promise<B>;
 
@@ -126,7 +122,7 @@ export const getRoute_textFile: T<{ route: Route }, string> =
   (input) => async (ctx) => {
     try {
       const filepath_input = fromRouteToInputFilepath(input.route);
-      return await fs.readFile(isoRelativeFilepath.unwrap(filepath_input), {
+      return await fs.readFile(isoFilepath.unwrap(filepath_input), {
         encoding: "utf8",
       });
     } catch (e: any) {
@@ -140,16 +136,12 @@ export const setRoute_textFile: T<{
 }> = (input) => async (ctx) => {
   try {
     const filepath_output = fromRouteToOutputFilepath(input.route);
-    await fs.mkdir(path.dirname(isoRelativeFilepath.unwrap(filepath_output)), {
+    await fs.mkdir(path.dirname(isoFilepath.unwrap(filepath_output)), {
       recursive: true,
     });
-    await fs.writeFile(
-      isoRelativeFilepath.unwrap(filepath_output),
-      input.content,
-      {
-        encoding: "utf8",
-      },
-    );
+    await fs.writeFile(isoFilepath.unwrap(filepath_output), input.content, {
+      encoding: "utf8",
+    });
   } catch (e: any) {
     throw new EfError(label("setRoute_textFile", input, e.toString()));
   }
@@ -159,7 +151,7 @@ export const getSubRoutes: T<{ route: Route }, Route[]> =
   (input) => async (ctx) => {
     try {
       const dirpath = fromRouteToInputFilepath(input.route);
-      const filenames = await fs.readdir(isoRelativeFilepath.unwrap(dirpath));
+      const filenames = await fs.readdir(isoFilepath.unwrap(dirpath));
       return filenames.map((x) =>
         schemaRoute.parse(joinRoutes(input.route, schemaRoute.parse(`/${x}`))),
       );
@@ -174,15 +166,12 @@ export const useLocalFile: T<{ route: Route }> = run(
     try {
       const filepath_input = fromRouteToInputFilepath(input.route);
       const filepath_output = fromRouteToOutputFilepath(input.route);
-      await fs.mkdir(
-        path.dirname(isoRelativeFilepath.unwrap(filepath_output)),
-        {
-          recursive: true,
-        },
-      );
+      await fs.mkdir(path.dirname(isoFilepath.unwrap(filepath_output)), {
+        recursive: true,
+      });
       await fs.copyFile(
-        isoRelativeFilepath.unwrap(filepath_input),
-        isoRelativeFilepath.unwrap(filepath_output),
+        isoFilepath.unwrap(filepath_input),
+        isoFilepath.unwrap(filepath_output),
       );
     } catch (e: any) {
       throw new EfError(label("useLocalFile", input, e.toString()));
@@ -190,14 +179,17 @@ export const useLocalFile: T<{ route: Route }> = run(
   },
 );
 
-export const useRemoteFile: T<{ href: Href; route: Route }> = run(
+export const useRemoteFile: T<{
+  href: Href;
+  route: Route;
+}> = run(
   {
     label: (input) => label("useRemoteFile", input, `to ${input.route}`),
   },
   (input) => async (ctx) => {
     try {
       const filepath_output = fromRouteToOutputFilepath(input.route);
-      if (fsSync.existsSync(isoRelativeFilepath.unwrap(filepath_output))) {
+      if (fsSync.existsSync(isoFilepath.unwrap(filepath_output))) {
         // already downloaded, so, don't need to download again
         return;
       } else {
@@ -210,14 +202,13 @@ export const useRemoteFile: T<{ href: Href; route: Route }> = run(
         const blob = await response.blob();
         const arrayBuffer = await blob.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
-        await fs.mkdir(
-          path.dirname(isoRelativeFilepath.unwrap(filepath_output)),
-          { recursive: true },
-        );
-        await fs.writeFile(isoRelativeFilepath.unwrap(filepath_output), buffer);
+        await fs.mkdir(path.dirname(isoFilepath.unwrap(filepath_output)), {
+          recursive: true,
+        });
+        await fs.writeFile(isoFilepath.unwrap(filepath_output), buffer);
       }
     } catch (e: any) {
-      throw new EfError(label("useRemoteFile", input, e.toString()));
+      throw new EfError(label("useRemoteFile", input, e.message));
     }
   },
 );

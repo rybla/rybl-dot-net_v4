@@ -1,6 +1,6 @@
+import * as transform from "@/build/analyze";
 import * as generate from "@/build/generate";
 import * as parse from "@/build/parse";
-import * as transform from "@/build/analyze";
 import * as ef from "@/ef";
 
 const build: ef.T = ef.run({ label: "build" }, (input) => async (ctx) => {

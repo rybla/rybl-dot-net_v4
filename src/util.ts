@@ -1,4 +1,5 @@
 import { iso, type Newtype } from "newtype-ts";
+import path from "path";
 import { z } from "zod";
 
 export type Record = { [key: string]: any };
@@ -27,8 +28,8 @@ export type OptionalizeRecord<R extends Record> = {
   [K in keyof R]: R[K] | undefined;
 };
 
-export const encodeURIComponent_id = (uriComponent: string) =>
-  encodeURIComponent(uriComponent.replaceAll(" ", "_"));
+export const encodeURIComponent_better = (s: string) =>
+  encodeURIComponent(s.replaceAll(/(:|_|\/)/g, "_"));
 
 export type Ref<A> = { value: A };
 export const Ref = <A>(value: A): Ref<A> => ({ value });
@@ -85,69 +86,48 @@ export const dedupInPlace = <A>(xs: A[], getId: (x: A) => string): void => {
   xs.length = writeIndex;
 };
 
-/**
- * Converts a {@link URL} to a safe filename by replacing characters that are
- * not valid in filenames, which still keeping the {@link URL} looking mostly
- * the same.
- *
- * @param url
- */
-export function fromUrlToFilename(url: URL): string {
-  let filename = url.toString();
-
-  filename = filename.replace(/^[a-z][a-z0-9+.-]*:\/\//i, (match) => {
-    return match.substring(0, match.length - 3) + "_";
-  });
-
-  filename = filename.replace(/\//g, "_");
-  filename = filename.replace(/\?/g, "_Q_");
-  filename = filename.replace(/&/g, "_A_");
-  filename = filename.replace(/=/g, "_E_");
-  filename = filename.replace(/#/g, "_H_");
-
-  filename = filename.replace(/:/g, "_colon_");
-  filename = filename.replace(/\*/g, "_star_");
-  filename = filename.replace(/"/g, "_quote_");
-  filename = filename.replace(/</g, "_lt_");
-  filename = filename.replace(/>/g, "_gt_");
-  filename = filename.replace(/\|/g, "_pipe_");
-  filename = filename.replace(/\\/g, "_bslash_");
-  filename = filename.replace(/\s/g, "_");
-
-  return filename;
-}
-
-// TODO: does this actually work well?
-export function fromStringToFilename(
-  input: string,
-  defaultName: string = "untitled",
-): string {
-  let filename = input.trim();
-  if (filename === "") return defaultName;
-  filename = filename.replaceAll(/[<>:"/\\|?*\x00-\x1F]/g, "_");
-  filename = filename.replaceAll(/_+/g, "_");
-  filename = filename.replaceAll(/^_+|_+$/g, "");
-  if (filename === "") return defaultName;
-  return filename;
-}
-
 export interface Filename
   extends Newtype<{ readonly tagFilename: unique symbol }, string> {}
 export const isoFilename = iso<Filename>();
-const regexFilename = /^(?!^\.$|^\.\.$)[^\/:]+$/;
 export const schemaFilename = z
   .string()
-  .regex(regexFilename)
+  .refine((s) => {
+    try {
+      path.parse(s);
+      return true;
+    } catch {
+      return false;
+    }
+  }, "a Filename must be a valid path")
+  .refine((s) => !s.includes("/"), "a Filename must not include '/'")
   .transform(isoFilename.wrap);
 
-export interface RelativeFilepath
+export interface Filepath
   extends Newtype<{ readonly tagFilepath: unique symbol }, string> {}
-export const isoRelativeFilepath = iso<RelativeFilepath>();
-const regexRelativeFilepath = /^[^/]+(?:\/[^\/]+)*\/?$/;
-export const schemaRelativeFilepath = z
+export const isoFilepath = iso<Filepath>();
+// const regexRelativeFilepath = /^[^/]+(?:\/[^\/]+)*\/?$/;
+export const schemaFilepath = z
   .string()
-  .regex(regexRelativeFilepath)
-  .transform(isoRelativeFilepath.wrap);
+  .refine((s) => {
+    try {
+      path.parse(s);
+      return true;
+    } catch {
+      return false;
+    }
+  }, "a Filepath must be a valid path")
+  .refine((s) => !s.startsWith("/"), "a Filepath must not start with '/'")
+  .refine(
+    (s) =>
+      !(
+        s.includes(":") ||
+        s.includes(" ") ||
+        s.includes("../") ||
+        s.includes("./")
+      ),
+    `a Filepath must NOT include: ":", " ", "../", "./"`,
+  )
+  .transform(isoFilepath.wrap);
 
 export const schemaURL = z
   .string()
@@ -173,8 +153,25 @@ export interface Route
 export const isoRoute = iso<Route>();
 export const schemaRoute = z
   .string()
+  .refine((s) => {
+    try {
+      path.parse(s);
+      return true;
+    } catch {
+      return false;
+    }
+  }, "a Route must be a valid path")
   .refine((s) => s.startsWith("/"), `a Route must start with a "/"`)
-  .refine((s) => !s.includes(":"), `a Route cannot include ":"`)
+  .refine(
+    (s) =>
+      !(
+        s.includes(":") ||
+        s.includes(" ") ||
+        s.includes("../") ||
+        s.includes("./")
+      ),
+    `a Route must NOT include: ":", " ", "../", "./"`,
+  )
   .transform(isoRoute.wrap);
 
 export const fromRouteToHref = (route: Route): Href =>
@@ -189,7 +186,7 @@ export const joinRoutes = (...rs: Route[]): Route =>
   schemaRoute.parse(rs.map(isoRoute.unwrap).join(""));
 
 /**
- * An {@link Href} is a hyper-reference that can be either local ("/" followed by a valid relative filepath) or remote (a valid URL).
+ * An {@link Href} is a hyper-reference that can be either local ("/" followed by a filepath) or remote (a URL).
  * Local {@link Href}s always begin with "/".
  */
 export interface Href

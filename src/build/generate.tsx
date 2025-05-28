@@ -1,13 +1,10 @@
 import * as ef from "@/ef";
 import type { MarkdownResource, Website } from "@/ontology";
-import { unified } from "unified";
-import remarkRehype from "remark-rehype";
-import remarkStringify from "remark-stringify";
 import * as hast from "hast";
-import * as mdast from "mdast";
-import * as unist from "unist";
-import rehypeStringify from "rehype-stringify";
 import rehypeFormat from "rehype-format";
+import rehypeStringify from "rehype-stringify";
+import remarkRehype from "remark-rehype";
+import { unified } from "unified";
 
 export const generateWebsite: ef.T<{
   website: Website;

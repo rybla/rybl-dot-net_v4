@@ -1,9 +1,9 @@
 import * as config from "@/config";
 import * as ef from "@/ef";
 import {
+  encodeURIComponent_better,
   fromHrefToRouteOrURL,
   fromRouteToHref,
-  fromUrlToFilename,
   isoHref,
   isoRoute,
   type Href,
@@ -119,7 +119,7 @@ export const getIconRoute_of_Reference = (ref: Reference): Route => {
     case "external":
       return getIconRoute_of_URL(ref.value);
     case "internal":
-      return config.route_of_placeholder_favicon;
+      return config.route_of_favicon_of_website;
   }
 };
 
@@ -132,13 +132,13 @@ export const getIconHref_of_URL = (url: URL): Href =>
   isoHref.wrap(`${getHostHref_of_URL(url)}/favicon.ico`);
 
 export const getIconRoute_of_URL = (url: URL): Route =>
-  isoRoute.wrap(`${fromUrlToFilename(url)}.ico`);
+  isoRoute.wrap(`${encodeURIComponent_better(url.href)}.ico`);
 
 export const getIconRoute_of_Href = (href: Href): Route => {
   const result = fromHrefToRouteOrURL(href);
   switch (result.type) {
     case "route":
-      return config.route_of_placeholder_favicon;
+      return config.route_of_favicon_of_website;
     case "url":
       return getIconRoute_of_URL(result.value);
   }
