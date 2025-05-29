@@ -1,12 +1,14 @@
-import * as config from "@/config";
 import * as ef from "@/ef";
 import {
   addResource,
+  config,
+  isoRoute,
+  schemaRoute,
   type MarkdownResource,
   type Resource,
+  type Route,
   type Website,
 } from "@/ontology";
-import { isoRoute, schemaRoute, type Route } from "@/util";
 import remarkDirective from "remark-directive";
 import remarkFrontmatter from "remark-frontmatter";
 import remarkGfm from "remark-gfm";

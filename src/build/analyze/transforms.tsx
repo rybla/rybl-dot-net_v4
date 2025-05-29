@@ -1,13 +1,14 @@
 import * as ef from "@/ef";
-import { getIconRoute_of_Href } from "@/ontology";
-import { showNode } from "@/unified_util";
 import {
-  encodeURIComponent_better,
-  fromRouteToHref,
+  from_Href_to_iconRoute,
+  from_Reference_to_Href,
+  from_Route_to_Href,
   isoHref,
   schemaHref,
-  type Tree,
-} from "@/util";
+  type Reference,
+} from "@/ontology";
+import { showNode } from "@/unified_util";
+import { encodeURIComponent_better, type Tree } from "@/util";
 import * as mdast from "mdast";
 import { visit } from "unist-util-visit";
 
@@ -27,7 +28,7 @@ export const addPrefixIconsToLinks: ef.T<{ root: mdast.Root }> =
   };
 
 const addPrefixIcon: ef.T<{ link: mdast.Link }> = (input) => async (ctx) => {
-  await ef.tell(`addPrefixIcon(${input.link.url})`)(ctx);
+  // await ef.tell(`addPrefixIcon(${input.link.url})`)(ctx);
   const href = await ef.successulSafeParse(
     schemaHref.safeParse(input.link.url),
   )(ctx);
@@ -43,12 +44,13 @@ const addPrefixIcon: ef.T<{ link: mdast.Link }> = (input) => async (ctx) => {
           class: "icon",
         },
       },
-      url: isoHref.unwrap(fromRouteToHref(getIconRoute_of_Href(href))),
+      url: isoHref.unwrap(from_Route_to_Href(from_Href_to_iconRoute(href))),
     },
     {
       type: "textDirective",
       name: "span",
       data: {
+        hName: "span",
         hProperties: {
           class: "label",
         },
@@ -123,10 +125,10 @@ export const addTableOfContents: ef.T<{ root: mdast.Root }, void> =
   };
 
 export const addReferencesSection: ef.T<
-  { root: mdast.Root; links: mdast.Link[] },
+  { root: mdast.Root; references: Reference[] },
   void
 > = (input) => async (ctx) => {
-  if (input.links.length === 0) return;
+  if (input.references.length === 0) return;
 
   const heading: mdast.Heading = {
     type: "heading",
@@ -142,14 +144,25 @@ export const addReferencesSection: ef.T<
   const refs: mdast.List = {
     type: "list",
     ordered: false,
-    children: input.links.map(
-      (link) =>
+    children: input.references.map(
+      (ref) =>
         ({
           type: "listItem",
           children: [
             {
               type: "paragraph",
-              children: [link],
+              children: [
+                {
+                  type: "link",
+                  url: isoHref.unwrap(from_Reference_to_Href(ref)),
+                  children: [
+                    {
+                      type: "text",
+                      value: isoHref.unwrap(from_Reference_to_Href(ref)),
+                    },
+                  ],
+                },
+              ],
             },
           ],
         }) as mdast.ListItem,

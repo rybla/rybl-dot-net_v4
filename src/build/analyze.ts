@@ -1,22 +1,24 @@
-import * as config from "@/config";
-import * as mdast from "mdast";
+import * as transforms from "@/build/analyze/transforms";
 import * as ef from "@/ef";
 import {
-  fromHref_to_Reference,
-  getHostHref_of_URL,
-  getHref_of_Reference,
-  getIconHref_of_URL,
-  getIconRoute_of_URL,
-  ResourceMetadata_Schema,
+  config,
+  from_Href_to_Reference,
+  from_Reference_to_Href,
+  from_Reference_to_IconRoute,
+  from_URL_to_iconHref,
+  from_URL_to_iconRoute,
+  isoHref,
+  isoRoute,
+  schemaHref,
+  schemaResourceMetadata,
   type ExternalReference,
   type Reference,
   type Website,
 } from "@/ontology";
 import { showNode } from "@/unified_util";
-import { dedup, dedupInPlace, do_, isoHref, schemaHref } from "@/util";
+import { dedup, dedupInPlace, do_ } from "@/util";
 import { visit } from "unist-util-visit";
-import YAML from "yaml";
-import * as transforms from "./analyze/transforms";
+import * as YAML from "yaml";
 
 export const analyzeWebsite: ef.T<{
   website: Website;
@@ -27,8 +29,6 @@ export const analyzeWebsite: ef.T<{
 
   for (const res of input.website.resources) {
     if (res.type === "markdown") {
-      const links: mdast.Link[] = [];
-
       await ef.all({
         opts: {},
         input: {},
@@ -40,7 +40,7 @@ export const analyzeWebsite: ef.T<{
                 switch (node.type) {
                   case "yaml": {
                     const frontmatter = YAML.parse(node.value);
-                    const metadata = ResourceMetadata_Schema.parse(frontmatter);
+                    const metadata = schemaResourceMetadata.parse(frontmatter);
                     res.metadata = metadata;
                     break;
                   }
@@ -54,11 +54,10 @@ export const analyzeWebsite: ef.T<{
                   }
                   //
                   case "link": {
-                    links.push(node);
                     const href = await ef.successulSafeParse(
                       schemaHref.safeParse(node.url),
                     )(ctx);
-                    const ref = fromHref_to_Reference(href);
+                    const ref = from_Href_to_Reference(href);
                     res.references.push(ref);
                     references_global.push(ref);
                     break;
@@ -72,37 +71,43 @@ export const analyzeWebsite: ef.T<{
       })(ctx);
 
       dedupInPlace(res.references, (x) =>
-        isoHref.unwrap(getHref_of_Reference(x)),
+        isoHref.unwrap(from_Reference_to_Href(x)),
       );
 
-      await transforms.addReferencesSection({ root: res.root, links })(ctx);
+      await transforms.addReferencesSection({
+        root: res.root,
+        references: res.references,
+      })(ctx);
       await transforms.addPrefixIconsToLinks({ root: res.root })(ctx);
       await transforms.addTableOfContents({ root: res.root })(ctx);
     }
   }
 
   dedupInPlace(references_global, (x) =>
-    isoHref.unwrap(getHref_of_Reference(x)),
+    isoHref.unwrap(from_Reference_to_Href(x)),
   );
-  // await ef.tellJSON(references_global)(ctx);
   await useIcons_of_References({ references: references_global })(ctx);
 });
 
-const useIcons_of_References: ef.T<{ references: Reference[] }> = ef.run(
+export const useIcons_of_References: ef.T<{ references: Reference[] }> = ef.run(
   { label: "useIcons_of_References" },
   (input) => async (ctx) => {
-    const references_external: ExternalReference[] = input.references.flatMap(
-      (ref) => {
-        switch (ref.type) {
-          case "external":
-            return [ref];
-          default:
-            return [];
-        }
-      },
+    const references = dedup(input.references, (x) =>
+      isoRoute.unwrap(from_Reference_to_IconRoute(x)),
     );
 
-    // await ef.tellJSON({ references_external })(ctx);
+    const references_external: ExternalReference[] = [];
+    for (const ref of references) {
+      switch (ref.type) {
+        case "external": {
+          references_external.push(ref);
+          break;
+        }
+        default: {
+          break;
+        }
+      }
+    }
 
     await ef.all({
       opts: {},
@@ -118,8 +123,9 @@ const useIcons_of_References: ef.T<{ references: Reference[] }> = ef.run(
           },
           () => async (ctx) => {
             await ef.useRemoteFile({
-              href: getIconHref_of_URL(ref.value),
-              route: getIconRoute_of_URL(ref.value),
+              href: from_URL_to_iconHref(ref.value),
+              route: from_URL_to_iconRoute(ref.value),
+              default_route: config.route_of_placeholder_favicon,
             })(ctx);
           },
         ),

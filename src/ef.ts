@@ -1,24 +1,24 @@
-import * as config from "@/config";
-import {
-  indentString,
-  isoHref,
-  isoFilepath,
-  isoRoute,
-  joinRoutes,
-  schemaFilepath,
-  schemaRoute,
-  type Href,
-  type Filepath,
-  type Route,
-} from "@/util";
+import { indentString } from "@/util";
 import * as fsSync from "fs";
 import * as fs from "fs/promises";
 import path from "path";
 import { z } from "zod";
+import {
+  config,
+  isoFilepath,
+  isoHref,
+  isoRoute,
+  joinRoutes,
+  schemaFilepath,
+  schemaRoute,
+  type Filepath,
+  type Href,
+  type Route,
+} from "./ontology";
 
-const fromRouteToInputFilepath = (r: Route): Filepath =>
+const fromRouteToFilepath_input = (r: Route): Filepath =>
   schemaFilepath.parse(path.join(config.dirpath_of_input, isoRoute.unwrap(r)));
-const fromRouteToOutputFilepath = (r: Route): Filepath =>
+const fromRouteToFilepath_output = (r: Route): Filepath =>
   schemaFilepath.parse(path.join(config.dirpath_of_output, isoRoute.unwrap(r)));
 
 export type T<A = unknown, B = void> = (input: A) => (ctx: Ctx.T) => Promise<B>;
@@ -121,7 +121,7 @@ export const withCache: T<void, void> = (input) => async (ctx) => {
 export const getRoute_textFile: T<{ route: Route }, string> =
   (input) => async (ctx) => {
     try {
-      const filepath_input = fromRouteToInputFilepath(input.route);
+      const filepath_input = fromRouteToFilepath_input(input.route);
       return await fs.readFile(isoFilepath.unwrap(filepath_input), {
         encoding: "utf8",
       });
@@ -135,7 +135,7 @@ export const setRoute_textFile: T<{
   content: string;
 }> = (input) => async (ctx) => {
   try {
-    const filepath_output = fromRouteToOutputFilepath(input.route);
+    const filepath_output = fromRouteToFilepath_output(input.route);
     await fs.mkdir(path.dirname(isoFilepath.unwrap(filepath_output)), {
       recursive: true,
     });
@@ -150,7 +150,7 @@ export const setRoute_textFile: T<{
 export const getSubRoutes: T<{ route: Route }, Route[]> =
   (input) => async (ctx) => {
     try {
-      const dirpath = fromRouteToInputFilepath(input.route);
+      const dirpath = fromRouteToFilepath_input(input.route);
       const filenames = await fs.readdir(isoFilepath.unwrap(dirpath));
       return filenames.map((x) =>
         schemaRoute.parse(joinRoutes(input.route, schemaRoute.parse(`/${x}`))),
@@ -164,8 +164,8 @@ export const useLocalFile: T<{ route: Route }> = run(
   { label: (input) => `useLocalFile("${input.route}" ==> ~)` },
   (input) => async (ctx) => {
     try {
-      const filepath_input = fromRouteToInputFilepath(input.route);
-      const filepath_output = fromRouteToOutputFilepath(input.route);
+      const filepath_input = fromRouteToFilepath_input(input.route);
+      const filepath_output = fromRouteToFilepath_output(input.route);
       await fs.mkdir(path.dirname(isoFilepath.unwrap(filepath_output)), {
         recursive: true,
       });
@@ -182,15 +182,21 @@ export const useLocalFile: T<{ route: Route }> = run(
 export const useRemoteFile: T<{
   href: Href;
   route: Route;
+  /**
+   * If {@link href} cannot be downloaded, then copy the input
+   * {@link default_route} to output {@link route}.
+   */
+  default_route?: Route;
 }> = run(
   {
     label: (input) => label("useRemoteFile", input, `to ${input.route}`),
   },
   (input) => async (ctx) => {
+    const filepath_output = fromRouteToFilepath_output(input.route);
     try {
-      const filepath_output = fromRouteToOutputFilepath(input.route);
       if (fsSync.existsSync(isoFilepath.unwrap(filepath_output))) {
         // already downloaded, so, don't need to download again
+        await tell(`Already downloaded ${input.href}`)(ctx);
         return;
       } else {
         const response = await fetch(isoHref.unwrap(input.href), {
@@ -208,7 +214,18 @@ export const useRemoteFile: T<{
         await fs.writeFile(isoFilepath.unwrap(filepath_output), buffer);
       }
     } catch (e: any) {
-      throw new EfError(label("useRemoteFile", input, e.message));
+      if (input.default_route) {
+        await tell(
+          `Failed to download file from ${input.href}, so using default ${input.default_route}`,
+        )(ctx);
+        const filepath_input = fromRouteToFilepath_input(input.default_route);
+        await fs.copyFile(
+          isoFilepath.unwrap(filepath_input),
+          isoFilepath.unwrap(filepath_output),
+        );
+      } else {
+        throw new EfError(label("useRemoteFile", input, e.message));
+      }
     }
   },
 );

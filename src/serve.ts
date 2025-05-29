@@ -1,7 +1,7 @@
-import * as config from "@/config";
 import express from "express";
 import http from "http";
-import { do_ } from "./util";
+import { do_ } from "@/util";
+import { config } from "@/ontology";
 
 do_(async () => {
   const app = express();
