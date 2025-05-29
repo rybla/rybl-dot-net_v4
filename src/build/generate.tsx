@@ -39,8 +39,8 @@ const useStyles: ef.T = ef.run({ label: "useStyles" }, () => async (ctx) => {
   await ef.all({
     opts: {},
     input: {},
-    ks: routes_of_styles.map(
-      (route) => () => ef.useLocalFile({ input: route }),
+    ks: routes_of_styles.map((route) =>
+      ef.run({}, () => ef.useLocalFile({ input: route })),
     ),
   })(ctx);
 });

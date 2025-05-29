@@ -1,4 +1,5 @@
 import * as ef from "@/ef";
+import * as mdast from "mdast";
 import {
   config,
   from_Href_to_Reference,
@@ -22,7 +23,7 @@ import { visit } from "unist-util-visit";
 import * as YAML from "yaml";
 import {
   addBacklinksSection,
-  addPrefixIconsToLinks,
+  stylizeLink,
   addReferencesSection,
   addTableOfContents,
   type Backlink,
@@ -32,6 +33,8 @@ export const analyzeWebsite: ef.T<{
   website: Website;
 }> = ef.run({ label: "analyzeWebsite" }, (input) => async (ctx) => {
   const references_global: Reference[] = [];
+
+  // TODO: expand directives
 
   await ef.run({ label: "individual processing" }, () => async (ctx) => {
     for (const res of input.website.resources) {
@@ -148,9 +151,27 @@ export const analyzeWebsite: ef.T<{
               backlinks,
             })(ctx);
 
-            await addPrefixIconsToLinks({ root: res.root })(ctx);
+            const links: mdast.Link[] = [];
+            const headings: mdast.Heading[] = [];
 
-            await addTableOfContents({ root: res.root })(ctx);
+            visit(res.root, (node) => {
+              switch (node.type) {
+                case "link": {
+                  links.push(node);
+                  break;
+                }
+                case "heading": {
+                  headings.push(node);
+                  break;
+                }
+              }
+            });
+
+            for (const link of links) {
+              await stylizeLink({ link })(ctx);
+            }
+
+            await addTableOfContents({ route: res.route, root: res.root })(ctx);
           }
         })(undefined)(ctx);
       }
@@ -188,22 +209,13 @@ export const useIcons_of_References: ef.T<{ references: Reference[] }> = ef.run(
       opts: {},
       input: {},
       ks: references_external.map((ref) =>
-        ef.run(
-          {
-            catch: (e) => async (ctx) => {
-              /** TODO: set reference's icon href to be the placeholder {@link config.iconRoute_placeholder} */
-              // throw e;
-              await ef.tell(e.message)(ctx);
-            },
-          },
-          () => async (ctx) => {
-            await ef.useRemoteFile({
-              href: from_URL_to_iconHref(ref.value),
-              output: from_URL_to_iconRoute(ref.value),
-              input_default: config.iconRoute_placeholder,
-            })(ctx);
-          },
-        ),
+        ef.run({}, () => async (ctx) => {
+          await ef.useRemoteFile({
+            href: from_URL_to_iconHref(ref.value),
+            output: from_URL_to_iconRoute(ref.value),
+            input_default: config.iconRoute_placeholder,
+          })(ctx);
+        }),
       ),
     })(ctx);
   },

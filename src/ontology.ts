@@ -1,5 +1,5 @@
 import * as ef from "@/ef";
-import { encodeURIComponent_better } from "@/util";
+import { do_, encodeURIComponent_better } from "@/util";
 import * as mdast from "mdast";
 import { iso, type Newtype } from "newtype-ts";
 import path from "path";
@@ -223,14 +223,20 @@ export const from_Reference_to_IconRoute = (ref: Reference): Route => {
 
 export const from_URL_to_Href = (url: URL): Href => isoHref.wrap(url.href);
 
-export const from_URL_to_hostHref = (url: URL): Href =>
-  schemaHref.parse(`${url.protocol}//${url.hostname}`);
+export const from_URL_to_hostHref = (url: URL): Href => {
+  return schemaHref.parse(`${url.protocol}//${url.host}`);
+};
+
+export const join_Href_with_Route = (href: Href, route: Route): Href => {
+  const href_string = isoHref.unwrap(href);
+  return schemaHref.parse(
+    `${href_string.endsWith("/") ? href_string.slice(0, -1) : href_string}${route}`,
+  );
+};
 
 export const from_URL_to_iconHref = (url: URL): Href => {
-  const hostRef = from_URL_to_hostHref(url);
-  return schemaHref.parse(
-    `${hostRef}${isoHref.unwrap(hostRef).endsWith("/") ? "" : "/"}favicon.ico`,
-  );
+  const hostHref = from_URL_to_hostHref(url);
+  return join_Href_with_Route(hostHref, schemaRoute.parse("/favicon.ico"));
 };
 
 /**
@@ -269,27 +275,33 @@ export const from_Href_to_Reference = (href: Href): Reference => {
   }
 };
 
-export const config = {
-  dirpath_of_server: schemaFilepath.parse("docs"),
-  port_of_server: 3000,
+export const config = do_(() => {
+  const port_of_server = 3000;
 
-  url_of_website: new URL("https://rybl.net"),
-  name_of_website: "rybl.net",
-  input_iconRoute_of_website: schemaRoute.parse("/asset/icon/favicon.ico"),
-  iconRoute_of_website: schemaRoute.parse("/favicon.ico"),
+  return {
+    dirpath_of_server: schemaFilepath.parse("docs"),
+    port_of_server,
 
-  dirpaths_of_watchers: ["src", "input"].map((x) => schemaFilepath.parse(x)),
+    url_of_website: process.env.PRODUCTION
+      ? new URL("https://rybl.net")
+      : new URL(`http://localhost:${port_of_server}`),
+    name_of_website: "rybl.net",
+    input_iconRoute_of_website: schemaRoute.parse("/asset/icon/favicon.ico"),
+    iconRoute_of_website: schemaRoute.parse("/favicon.ico"),
 
-  dirpath_of_output: schemaFilepath.parse("docs"),
-  dirpath_of_input: schemaFilepath.parse("input"),
+    dirpaths_of_watchers: ["src", "input"].map((x) => schemaFilepath.parse(x)),
 
-  iconRoute_placeholder: schemaRoute.parse("/asset/icon/placeholder.ico"),
+    dirpath_of_output: schemaFilepath.parse("docs"),
+    dirpath_of_input: schemaFilepath.parse("input"),
 
-  timeout_of_fetch: 5000,
-  size_of_batched_posts_batch: 10,
+    iconRoute_placeholder: schemaRoute.parse("/asset/icon/placeholder.ico"),
 
-  using_cache: true,
-  using_batched_posts: true,
+    timeout_of_fetch: 5000,
+    size_of_batched_posts_batch: 10,
 
-  route_of_styles: schemaRoute.parse("/asset/style"),
-};
+    using_cache: true,
+    using_batched_posts: true,
+
+    route_of_styles: schemaRoute.parse("/asset/style"),
+  };
+});
