@@ -1,5 +1,5 @@
 import { JSDOM } from "jsdom";
-import { encodeURIComponent_better, indentString } from "@/util";
+import { do_, encodeURIComponent_better, indentString } from "@/util";
 import * as fsSync from "fs";
 import * as fs from "fs/promises";
 import path from "path";
@@ -372,30 +372,41 @@ export const fetchTitle: T<{ url: URL }, string | undefined> = run(
     const dom = new JSDOM(htmlContent);
     const document = dom.window.document;
 
-    const ogTitle = document.querySelector('meta[property="og:title"]');
-    if (ogTitle) {
-      const title = ogTitle.getAttribute("content")?.trim();
-      if (title) return title;
-    }
+    const title = await do_(async () => {
+      const ogTitle = document.querySelector('meta[property="og:title"]');
+      if (ogTitle) {
+        const title = ogTitle.getAttribute("content")?.trim();
+        if (title) return title;
+      }
 
-    const twitterTitle = document.querySelector('meta[name="twitter:title"]');
-    if (twitterTitle) {
-      const title = twitterTitle.getAttribute("content")?.trim();
-      if (title) return title;
-    }
+      const twitterTitle = document.querySelector('meta[name="twitter:title"]');
+      if (twitterTitle) {
+        const title = twitterTitle.getAttribute("content")?.trim();
+        if (title) return title;
+      }
 
-    const titleTag = document.querySelector("title");
-    if (titleTag) {
-      const title = titleTag.textContent?.trim();
-      if (title) return title;
-    }
+      const titleTag = document.querySelector("title");
+      if (titleTag) {
+        const title = titleTag.textContent?.trim();
+        if (title) return title;
+      }
 
-    const h1Tag = document.querySelector("h1");
-    if (h1Tag) {
-      const title = h1Tag.textContent?.trim();
-      if (title) return title;
-    }
+      const h1Tag = document.querySelector("h1");
+      if (h1Tag) {
+        const title = h1Tag.textContent?.trim();
+        if (title) return title;
+      }
+    });
+    if (title === undefined) return undefined;
 
-    return undefined;
+    if (input.url.hash !== "") {
+      const e = document.getElementById(input.url.hash);
+      if (e === null) return title;
+      if (e.textContent === null) return title;
+      if (e.textContent === "") return title;
+      return `${title} –– ${e.textContent}`;
+    } else {
+      return title;
+    }
   },
 );
