@@ -6,13 +6,15 @@ import {
   from_Route_to_Href,
   from_URL_to_hostHref,
   isoHref,
+  isoRoute,
   join_Href_with_Route,
   schemaHref,
   type Reference,
+  type Resource,
   type Route,
 } from "@/ontology";
 import { showNode } from "@/unified_util";
-import { encodeURIComponent_better, type Tree } from "@/util";
+import { do_, encodeURIComponent_better, type Tree } from "@/util";
 import * as mdast from "mdast";
 import { visit } from "unist-util-visit";
 
@@ -166,7 +168,7 @@ export const addTableOfContents: ef.T<{ route: Route; root: mdast.Root }> =
   };
 
 export const addReferencesSection: ef.T<
-  { root: mdast.Root; references: Reference[] },
+  { root: mdast.Root; resources: Resource[]; references: Reference[] },
   void
 > = (input) => async (ctx) => {
   if (input.references.length === 0) return;
@@ -197,7 +199,17 @@ export const addReferencesSection: ef.T<
               children: [
                 {
                   type: "text",
-                  value: isoHref.unwrap(from_Reference_to_Href(ref)),
+                  value: do_(() => {
+                    switch (ref.type) {
+                      case "external":
+                        return ref.metadata.name ?? ref.value.href;
+                      case "internal":
+                        return (
+                          input.resources.find((res) => res.route === ref.value)
+                            ?.metadata.name ?? isoRoute.unwrap(ref.value)
+                        );
+                    }
+                  }),
                 },
               ],
             },

@@ -28,6 +28,7 @@ import {
   addTableOfContents,
   type Backlink,
 } from "@/build/analyze/transforms";
+import { fetch } from "bun";
 
 export const analyzeWebsite: ef.T<{
   website: Website;
@@ -64,6 +65,16 @@ export const analyzeWebsite: ef.T<{
                         break;
                       }
                       case "textDirective": {
+                        break;
+                      }
+                      //
+                      case "image": {
+                        const href = await ef.successfulSafeParse(
+                          schemaHref.safeParse(node.url),
+                        )(ctx);
+                        const ref = from_Href_to_Reference(href);
+                        res.references.push(ref);
+                        references_global.push(ref);
                         break;
                       }
                       //
@@ -130,6 +141,15 @@ export const analyzeWebsite: ef.T<{
     }
   })(undefined)(ctx);
 
+  dedupInPlace(references_global, (x) =>
+    isoHref.unwrap(from_Reference_to_Href(x)),
+  );
+
+  // TODO: populate reference metadata
+  await populateMetadata_of_References({ references: references_global })(ctx);
+
+  await useIcons_of_References({ references: references_global })(ctx);
+
   await ef.run(
     {
       label: "final transformations",
@@ -140,6 +160,7 @@ export const analyzeWebsite: ef.T<{
           if (res.type === "markdown") {
             await addReferencesSection({
               root: res.root,
+              resources: input.website.resources,
               references: res.references,
             })(ctx);
 
@@ -177,13 +198,27 @@ export const analyzeWebsite: ef.T<{
       }
     },
   )(undefined)(ctx);
-
-  dedupInPlace(references_global, (x) =>
-    isoHref.unwrap(from_Reference_to_Href(x)),
-  );
-
-  await useIcons_of_References({ references: references_global })(ctx);
 });
+
+export const populateMetadata_of_References: ef.T<{ references: Reference[] }> =
+  ef.run(
+    { label: "populateMetadata_of_References" },
+    (input) => async (ctx) => {
+      for (const ref of input.references) {
+        switch (ref.type) {
+          case "external": {
+            ref.metadata = await ef.fetchExternalReferenceMetadata({
+              url: ref.value,
+            })(ctx);
+            break;
+          }
+          default: {
+            break;
+          }
+        }
+      }
+    },
+  );
 
 export const useIcons_of_References: ef.T<{ references: Reference[] }> = ef.run(
   { label: "useIcons_of_References" },

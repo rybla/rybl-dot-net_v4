@@ -196,7 +196,18 @@ export type Reference =
   | ({ type: "external" } & ExternalReference)
   | ({ type: "internal" } & InternalReference);
 
-export type ExternalReference = { value: URL };
+export type ExternalReference = {
+  value: URL;
+  metadata: ExternalReferenceMetadata;
+};
+
+export type ExternalReferenceMetadata = z.infer<
+  typeof schemaExternalReferenceMetadata
+>;
+export const schemaExternalReferenceMetadata = z.object({
+  name: z.optional(z.string()),
+});
+
 export type InternalReference = { value: Route };
 
 // from_Reference_*
@@ -270,6 +281,7 @@ export const from_Href_to_Reference = (href: Href): Reference => {
       return {
         type: "external",
         value: route_or_url.value,
+        metadata: {},
       };
     }
   }
@@ -293,6 +305,7 @@ export const config = do_(() => {
 
     dirpath_of_output: schemaFilepath.parse("docs"),
     dirpath_of_input: schemaFilepath.parse("input"),
+    dirpath_of_memo: schemaFilepath.parse("memo"),
 
     iconRoute_placeholder: schemaRoute.parse("/asset/icon/placeholder.ico"),
 

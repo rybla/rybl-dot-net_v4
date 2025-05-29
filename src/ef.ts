@@ -1,4 +1,5 @@
-import { indentString } from "@/util";
+import { JSDOM } from "jsdom";
+import { encodeURIComponent_better, indentString } from "@/util";
 import * as fsSync from "fs";
 import * as fs from "fs/promises";
 import path from "path";
@@ -12,6 +13,7 @@ import {
   joinRoutes,
   schemaFilepath,
   schemaRoute,
+  type ExternalReferenceMetadata,
   type Filepath,
   type Href,
   type Route,
@@ -28,6 +30,11 @@ const from_Route_to_inputFilepath = (r: Route): Filepath =>
 const from_Route_to_outputFilepath = (r: Route): Filepath =>
   schemaFilepath.parse(
     joinFilepaths(config.dirpath_of_output, from_Route_to_Filepath(r)),
+  );
+
+const from_Route_to_memoFilepath = (r: Route): Filepath =>
+  schemaFilepath.parse(
+    joinFilepaths(config.dirpath_of_memo, from_Route_to_Filepath(r)),
   );
 
 export type T<A = unknown, B = void> = (input: A) => (ctx: Ctx.T) => Promise<B>;
@@ -105,27 +112,34 @@ export const run: <A, B>(
   }
 };
 
-export const getCache =
-  <A>(input: { key: string; default: T<unknown, A> }) =>
-  async (ctx: Ctx.T): Promise<A> => {
-    await tell(`get cache at "${input.key}"`)(ctx);
-    const filepath = `cache/${input.key}.json`;
-    if (!fsSync.existsSync(filepath)) return await input.default({})(ctx);
-    return JSON.parse(await fs.readFile(filepath, { encoding: "utf8" }));
-  };
-
-export const setCache =
-  <A>(input: { key: string; value: A }) =>
-  async (ctx: Ctx.T): Promise<void> => {
-    await tell(`set cache at "${input.key}"`)(ctx);
-    if (!fsSync.existsSync("cache")) fs.mkdir("cache", { recursive: true });
-    const filepath = `cache/${input.key}.json`;
-    await fs.writeFile(filepath, JSON.stringify(input.value, null, 4));
-  };
-
-export const withCache: T<void, void> = (input) => async (ctx) => {
-  // TODO: wrapper around using cached values
-};
+export const useMemo: <A>(input: {
+  key: string;
+  initialize: T<unknown, A>;
+}) => (ctx: Ctx.T) => Promise<A> = run(
+  { label: (input) => label("useMemo", input.key) },
+  (input) => async (ctx) => {
+    const filepath = joinFilepaths(
+      config.dirpath_of_memo,
+      schemaFilepath.parse(`${encodeURIComponent_better(input.key)}.json`),
+    );
+    if (!fsSync.existsSync(isoFilepath.unwrap(filepath))) {
+      await tell("initializing memo")(ctx);
+      const val = await input.initialize({})(ctx);
+      if (!fsSync.existsSync(isoFilepath.unwrap(config.dirpath_of_memo)))
+        fs.mkdir(isoFilepath.unwrap(config.dirpath_of_memo), {
+          recursive: true,
+        });
+      await fs.writeFile(
+        isoFilepath.unwrap(filepath),
+        JSON.stringify(val, null, 4),
+      );
+      return val;
+    }
+    return JSON.parse(
+      await fs.readFile(isoFilepath.unwrap(filepath), { encoding: "utf8" }),
+    );
+  },
+);
 
 export const getRoute_textFile: T<{ route: Route }, string> =
   (input) => async (ctx) => {
@@ -219,7 +233,7 @@ export const useRemoteFile: T<{
           signal: AbortSignal.timeout(config.timeout_of_fetch),
         });
         if (!response.ok)
-          throw new Error(`Failed to download file from ${input.href}`);
+          throw new EfError(`Failed to download file from ${input.href}`);
         const blob = await response.blob();
         const arrayBuffer = await blob.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
@@ -310,3 +324,78 @@ export const todo = <A>(msg?: string): A => {
   if (msg === undefined) throw new EfError(`[TODO]`);
   else throw new EfError(`[TODO]\n${msg}`);
 };
+
+export const fetchExternalReferenceMetadata: T<
+  { url: URL },
+  ExternalReferenceMetadata
+> = run(
+  { label: (input) => label("fetchExternalReferenceMetadata", input) },
+  (input) => async (ctx) => {
+    return await useMemo({
+      key: encodeURIComponent_better(input.url.href),
+      initialize: () => async (ctx) => {
+        const metadata: ExternalReferenceMetadata = {};
+        await all({
+          opts: {},
+          input: {},
+          ks: [
+            run({}, () => async (ctx) => {
+              metadata.name = await fetchTitle({ url: input.url })(ctx);
+            }),
+          ],
+        })(ctx);
+        return metadata;
+      },
+    })(ctx);
+  },
+);
+
+export const fetchTitle: T<{ url: URL }, string | undefined> = run(
+  { label: (input) => label("fetchTitle", input) },
+  (input) => async (ctx) => {
+    const response = await fetch(input.url.toString());
+
+    if (!response.ok) {
+      await tell(
+        `Failed to fetch article: ${response.status} ${response.statusText}`,
+      )(ctx);
+      return undefined;
+    }
+
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.includes("text/html")) {
+      await tell(`Expected HTML content, but got ${contentType}`)(ctx);
+      return undefined;
+    }
+
+    const htmlContent = await response.text();
+    const dom = new JSDOM(htmlContent);
+    const document = dom.window.document;
+
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) {
+      const title = ogTitle.getAttribute("content")?.trim();
+      if (title) return title;
+    }
+
+    const twitterTitle = document.querySelector('meta[name="twitter:title"]');
+    if (twitterTitle) {
+      const title = twitterTitle.getAttribute("content")?.trim();
+      if (title) return title;
+    }
+
+    const titleTag = document.querySelector("title");
+    if (titleTag) {
+      const title = titleTag.textContent?.trim();
+      if (title) return title;
+    }
+
+    const h1Tag = document.querySelector("h1");
+    if (h1Tag) {
+      const title = h1Tag.textContent?.trim();
+      if (title) return title;
+    }
+
+    return undefined;
+  },
+);
