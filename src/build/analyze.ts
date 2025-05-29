@@ -33,108 +33,103 @@ export const analyzeWebsite: ef.T<{
 }> = ef.run({ label: "analyzeWebsite" }, (input) => async (ctx) => {
   const references_global: Reference[] = [];
 
-  await ef.run(
-    { label: "first pass: individual processing" },
-    () => async (ctx) => {
-      for (const res of input.website.resources) {
-        await ef.run({ label: `route: ${res.route}` }, () => async (ctx) => {
-          if (res.type === "markdown") {
-            await ef.all({
-              opts: {},
-              input: {},
-              ks: do_(() => {
-                const ks: ef.T[] = [];
-                visit(res.root, (node) => {
-                  ks.push(
-                    ef.run({}, () => async (ctx) => {
-                      switch (node.type) {
-                        case "yaml": {
-                          const frontmatter = YAML.parse(node.value);
-                          const metadata =
-                            schemaResourceMetadata.parse(frontmatter);
-                          res.metadata = metadata;
-                          break;
-                        }
-                        //
-                        case "heading": {
-                          if (node.depth === 1)
-                            res.metadata.name === showNode(node);
-                          break;
-                        }
-                        case "textDirective": {
-                          break;
-                        }
-                        //
-                        case "link": {
-                          // convert all fragment hrefs to full hrefs
-                          if (node.url.startsWith("#")) {
-                            node.url = `${res.route}/${node.url}`;
-                          }
-
-                          const href = await ef.successfulSafeParse(
-                            schemaHref.safeParse(node.url),
-                          )(ctx);
-                          const ref = from_Href_to_Reference(href);
-                          res.references.push(ref);
-                          references_global.push(ref);
-                          break;
-                        }
+  await ef.run({ label: "individual processing" }, () => async (ctx) => {
+    for (const res of input.website.resources) {
+      await ef.run({ label: `route: ${res.route}` }, () => async (ctx) => {
+        if (res.type === "markdown") {
+          await ef.all({
+            opts: {},
+            input: {},
+            ks: do_(() => {
+              const ks: ef.T[] = [];
+              visit(res.root, (node) => {
+                ks.push(
+                  ef.run({}, () => async (ctx) => {
+                    switch (node.type) {
+                      case "yaml": {
+                        const frontmatter = YAML.parse(node.value);
+                        const metadata =
+                          schemaResourceMetadata.parse(frontmatter);
+                        res.metadata = metadata;
+                        break;
                       }
-                    }),
-                  );
-                });
-                return ks;
-              }),
-            })(ctx);
+                      //
+                      case "heading": {
+                        if (node.depth === 1) {
+                          res.metadata.name = showNode(node);
+                        }
+                        break;
+                      }
+                      case "textDirective": {
+                        break;
+                      }
+                      //
+                      case "link": {
+                        // convert all fragment hrefs to full hrefs
+                        if (node.url.startsWith("#")) {
+                          node.url = `${res.route}/${node.url}`;
+                        }
 
-            dedupInPlace(res.references, (x) =>
-              isoHref.unwrap(from_Reference_to_Href(x)),
-            );
-          }
-        })(undefined)(ctx);
-      }
-    },
-  )(undefined)(ctx);
+                        const href = await ef.successfulSafeParse(
+                          schemaHref.safeParse(node.url),
+                        )(ctx);
+                        const ref = from_Href_to_Reference(href);
+                        res.references.push(ref);
+                        references_global.push(ref);
+                        break;
+                      }
+                    }
+                  }),
+                );
+              });
+              return ks;
+            }),
+          })(ctx);
+
+          dedupInPlace(res.references, (x) =>
+            isoHref.unwrap(from_Reference_to_Href(x)),
+          );
+        }
+      })(undefined)(ctx);
+    }
+  })(undefined)(ctx);
 
   const map_Route_to_Backlinks: Map<Route, Backlink[]> = new Map();
 
-  await ef.run(
-    { label: "second pass: relationship processing" },
-    () => async (ctx) => {
-      for (const thisRes of input.website.resources) {
-        await ef.run({ label: `route ${thisRes.route}` }, () => async (ctx) => {
-          switch (thisRes.type) {
-            case "markdown": {
-              const backlinks: Backlink[] = [];
-              for (const otherRes of input.website.resources) {
-                if (
-                  otherRes.references.filter((ref) => {
-                    switch (ref.type) {
-                      case "internal":
-                        return ref.value === thisRes.route;
-                      default:
-                        return false;
-                    }
-                  }).length !== 0
-                ) {
-                  backlinks.push({
-                    name: get_name_of_Resource(otherRes),
-                    route: otherRes.route,
-                  });
-                }
+  await ef.run({ label: "relationship processing" }, () => async (ctx) => {
+    for (const thisRes of input.website.resources) {
+      await ef.run({ label: `route: ${thisRes.route}` }, () => async (ctx) => {
+        switch (thisRes.type) {
+          case "markdown": {
+            const backlinks: Backlink[] = [];
+            for (const otherRes of input.website.resources) {
+              if (
+                otherRes.references.filter((ref) => {
+                  switch (ref.type) {
+                    case "internal":
+                      return ref.value === thisRes.route;
+                    default:
+                      return false;
+                  }
+                }).length !== 0
+              ) {
+                backlinks.push({
+                  name: get_name_of_Resource(otherRes),
+                  route: otherRes.route,
+                });
               }
-
-              map_Route_to_Backlinks.set(thisRes.route, backlinks);
             }
+
+            map_Route_to_Backlinks.set(thisRes.route, backlinks);
           }
-        })(undefined)(ctx);
-      }
-    },
-  )(undefined)(ctx);
+        }
+      })(undefined)(ctx);
+    }
+  })(undefined)(ctx);
 
   await ef.run(
     {
-      label: "third pass: final transformations",
+      label: "final transformations",
     },
     () => async (ctx) => {
       for (const res of input.website.resources) {

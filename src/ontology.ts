@@ -275,6 +275,7 @@ export const config = {
 
   url_of_website: new URL("https://rybl.net"),
   name_of_website: "rybl.net",
+  input_iconRoute_of_website: schemaRoute.parse("/asset/icon/favicon.ico"),
   iconRoute_of_website: schemaRoute.parse("/favicon.ico"),
 
   dirpaths_of_watchers: ["src", "input"].map((x) => schemaFilepath.parse(x)),

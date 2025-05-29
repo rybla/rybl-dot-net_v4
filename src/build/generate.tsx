@@ -10,6 +10,10 @@ import { unified } from "unified";
 export const generateWebsite: ef.T<{
   website: Website;
 }> = ef.run({ label: "generateWebsite" }, (input) => async (ctx) => {
+  await ef.useLocalFile({
+    input: config.input_iconRoute_of_website,
+    output: config.iconRoute_of_website,
+  })(ctx);
   await useStyles({})(ctx);
 
   await ef.all({

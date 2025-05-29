@@ -29,7 +29,9 @@ export const addPrefixIconsToLinks: ef.T<{ root: mdast.Root }> =
   };
 
 const addPrefixIcon: ef.T<{ link: mdast.Link }> = ef.run(
-  { label: (input) => ef.label("addPrefixIcon", input.link.url) },
+  {
+    // label: (input) => ef.label("addPrefixIcon", input.link.url),
+  },
   (input) => async (ctx) => {
     const href = await ef.successfulSafeParse(
       schemaHref.safeParse(input.link.url),
