@@ -1,5 +1,6 @@
 import * as ef from "@/ef";
-import type { MarkdownResource, Website } from "@/ontology";
+import { config, type MarkdownResource, type Website } from "@/ontology";
+import { render_jsx } from "@/util";
 import * as hast from "hast";
 import rehypeFormat from "rehype-format";
 import rehypeStringify from "rehype-stringify";
@@ -9,6 +10,8 @@ import { unified } from "unified";
 export const generateWebsite: ef.T<{
   website: Website;
 }> = ef.run({ label: "generateWebsite" }, (input) => async (ctx) => {
+  await useStyles({})(ctx);
+
   await ef.all({
     opts: {},
     input: {},
@@ -24,6 +27,20 @@ export const generateWebsite: ef.T<{
   })(ctx);
 });
 
+const useStyles: ef.T = ef.run({ label: "useStyles" }, () => async (ctx) => {
+  const routes_of_styles = await ef.getSubRoutes({
+    route: config.route_of_styles,
+  })(ctx);
+
+  await ef.all({
+    opts: {},
+    input: {},
+    ks: routes_of_styles.map(
+      (route) => () => ef.useLocalFile({ input: route }),
+    ),
+  })(ctx);
+});
+
 const generateMarkdown: ef.T<{ resource: MarkdownResource }> = ef.run(
   {
     label: (input) => ef.label("generateMarkdown", input.resource.route),
@@ -33,11 +50,23 @@ const generateMarkdown: ef.T<{ resource: MarkdownResource }> = ef.run(
       //
       .use(remarkRehype)
       .run(input.resource.root);
-    const content = unified()
+    const mainContent = unified()
       //
       .use(rehypeFormat, {})
       .use(rehypeStringify, {})
       .stringify(root_hast);
+
+    const content = await render_jsx(
+      <>
+        {"<!doctype html>"}
+        <html>
+          <head>
+            <link rel="icon" href="/asset/style/top.css" />
+          </head>
+          <body>{mainContent as "safe"}</body>
+        </html>
+      </>,
+    );
 
     await ef.setRoute_textFile({
       route: input.resource.route,

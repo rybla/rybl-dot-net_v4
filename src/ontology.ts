@@ -1,9 +1,9 @@
 import * as ef from "@/ef";
 import { encodeURIComponent_better } from "@/util";
 import * as mdast from "mdast";
-import { z } from "zod";
 import { iso, type Newtype } from "newtype-ts";
 import path from "path";
+import { z } from "zod";
 
 export interface Filename
   extends Newtype<{ readonly tagFilename: unique symbol }, string> {}
@@ -48,14 +48,19 @@ export const schemaFilepath = z
   )
   .transform(isoFilepath.wrap);
 
+export const joinFilepaths = (...xs: Filepath[]): Filepath =>
+  schemaFilepath.parse(path.join(...xs.map((x) => isoFilepath.unwrap(x))));
+
 export const schemaURL = z
   .string()
   .url()
   .transform((s) => new URL(s));
 
-export const from_Href_to_Route_or_URL = (
-  href: Href,
-): { type: "route"; value: Route } | { type: "url"; value: URL } => {
+export type HrefUnion =
+  | { type: "route"; value: Route }
+  | { type: "url"; value: URL };
+
+export const from_Href_to_HrefUnion = (href: Href): HrefUnion => {
   const href_string = isoHref.unwrap(href);
   if (href_string.startsWith("/")) {
     return { type: "route", value: schemaRoute.parse(href) };
@@ -94,11 +99,11 @@ export const schemaRoute = z
   .transform(isoRoute.wrap);
 
 export const from_Route_to_Href = (route: Route): Href =>
-  isoHref.wrap(`/${isoRoute.unwrap(route)}`);
+  schemaHref.parse(isoRoute.unwrap(route));
 
 export const from_Href_to_Route = (href: Href): Route | undefined => {
   const href_string = isoHref.unwrap(href);
-  if (href_string.startsWith("/")) return isoRoute.wrap(href_string.slice(1));
+  if (href_string.startsWith("/")) return schemaRoute.parse(href_string);
 };
 
 export const joinRoutes = (...rs: Route[]): Route =>
@@ -207,7 +212,7 @@ export const from_Reference_to_IconRoute = (ref: Reference): Route => {
     case "external":
       return from_URL_to_iconRoute(ref.value);
     case "internal":
-      return config.route_of_favicon_of_website;
+      return config.iconRoute_of_website;
   }
 };
 
@@ -216,33 +221,35 @@ export const from_Reference_to_IconRoute = (ref: Reference): Route => {
 export const from_URL_to_Href = (url: URL): Href => isoHref.wrap(url.href);
 
 export const from_URL_to_hostHref = (url: URL): Href =>
-  isoHref.wrap(`${url.protocol}//${url.hostname}`);
+  schemaHref.parse(`${url.protocol}//${url.hostname}`);
 
-export const from_URL_to_iconHref = (url: URL): Href =>
-  isoHref.wrap(`${from_URL_to_hostHref(url)}/favicon.ico`);
+export const from_URL_to_iconHref = (url: URL): Href => {
+  const hostRef = from_URL_to_hostHref(url);
+  return schemaHref.parse(
+    `${hostRef}${isoHref.unwrap(hostRef).endsWith("/") ? "" : "/"}favicon.ico`,
+  );
+};
 
 /**
  * Note that it doesn't add a file extension. This is file for URLs, apparently.
  */
 export const from_URL_to_iconRoute = (url: URL): Route =>
-  isoRoute.wrap(
-    encodeURIComponent_better(isoHref.unwrap(from_URL_to_hostHref(url))),
-  );
+  schemaRoute.parse(`/icon/${encodeURIComponent_better(url.hostname)}`);
 
 // from_HRef_*
 
 export const from_Href_to_iconRoute = (href: Href): Route => {
-  const result = from_Href_to_Route_or_URL(href);
+  const result = from_Href_to_HrefUnion(href);
   switch (result.type) {
     case "route":
-      return config.route_of_favicon_of_website;
+      return config.iconRoute_of_website;
     case "url":
       return from_URL_to_iconRoute(result.value);
   }
 };
 
 export const from_Href_to_Reference = (href: Href): Reference => {
-  const route_or_url = from_Href_to_Route_or_URL(href);
+  const route_or_url = from_Href_to_HrefUnion(href);
   switch (route_or_url.type) {
     case "route": {
       return {
@@ -260,25 +267,25 @@ export const from_Href_to_Reference = (href: Href): Reference => {
 };
 
 export const config = {
-  dirpath_of_server: "./docs",
+  dirpath_of_server: schemaFilepath.parse("docs"),
   port_of_server: 3000,
 
   url_of_website: new URL("https://rybl.net"),
   name_of_website: "rybl.net",
-  route_of_favicon_of_website: schemaRoute.parse("/favicon.ico"),
+  iconRoute_of_website: schemaRoute.parse("/favicon.ico"),
 
-  dirpaths_of_watchers: ["./src", "./input"],
+  dirpaths_of_watchers: ["src", "input"].map((x) => schemaFilepath.parse(x)),
 
-  dirpath_of_output: "./docs",
-  dirpath_of_input: "./input",
+  dirpath_of_output: schemaFilepath.parse("docs"),
+  dirpath_of_input: schemaFilepath.parse("input"),
 
-  route_of_placeholder_favicon: schemaRoute.parse(
-    "/asset/placeholder_favicon.ico",
-  ),
+  iconRoute_placeholder: schemaRoute.parse("/asset/icon/placeholder.ico"),
 
   timeout_of_fetch: 5000,
   size_of_batched_posts_batch: 10,
 
   using_cache: true,
   using_batched_posts: true,
+
+  route_of_styles: schemaRoute.parse("/asset/style"),
 };

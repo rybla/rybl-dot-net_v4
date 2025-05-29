@@ -36,6 +36,7 @@ const addPrefixIcon: ef.T<{ link: mdast.Link }> = (input) => async (ctx) => {
   input.link.data = input.link.data ?? {};
   input.link.data.hProperties = input.link.data.hProperties ?? {};
   input.link.data.hProperties.class = "LinkWithIcon";
+  // await ef.tell(`addPrefixIcon: href: ${href}`)(ctx);
   input.link.children = [
     {
       type: "image",

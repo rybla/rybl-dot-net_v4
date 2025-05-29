@@ -54,6 +54,11 @@ export const analyzeWebsite: ef.T<{
                   }
                   //
                   case "link": {
+                    // convert all fragment hrefs to full hrefs
+                    if (node.url.startsWith("#")) {
+                      node.url = `${res.route}/${node.url}`;
+                    }
+
                     const href = await ef.successulSafeParse(
                       schemaHref.safeParse(node.url),
                     )(ctx);
@@ -70,6 +75,8 @@ export const analyzeWebsite: ef.T<{
         }),
       })(ctx);
 
+      // organize references
+
       dedupInPlace(res.references, (x) =>
         isoHref.unwrap(from_Reference_to_Href(x)),
       );
@@ -78,7 +85,11 @@ export const analyzeWebsite: ef.T<{
         root: res.root,
         references: res.references,
       })(ctx);
+
       await transforms.addPrefixIconsToLinks({ root: res.root })(ctx);
+
+      // table of contents
+
       await transforms.addTableOfContents({ root: res.root })(ctx);
     }
   }
@@ -116,7 +127,7 @@ export const useIcons_of_References: ef.T<{ references: Reference[] }> = ef.run(
         ef.run(
           {
             catch: (e) => async (ctx) => {
-              /** TODO: set reference's icon href to be the placeholder {@link config.route_of_placeholder_favicon} */
+              /** TODO: set reference's icon href to be the placeholder {@link config.iconRoute_placeholder} */
               // throw e;
               await ef.tell(e.message)(ctx);
             },
@@ -124,8 +135,8 @@ export const useIcons_of_References: ef.T<{ references: Reference[] }> = ef.run(
           () => async (ctx) => {
             await ef.useRemoteFile({
               href: from_URL_to_iconHref(ref.value),
-              route: from_URL_to_iconRoute(ref.value),
-              default_route: config.route_of_placeholder_favicon,
+              output: from_URL_to_iconRoute(ref.value),
+              input_default: config.iconRoute_placeholder,
             })(ctx);
           },
         ),
