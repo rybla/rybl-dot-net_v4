@@ -1,4 +1,3 @@
-import * as transforms from "@/build/analyze/transforms";
 import * as ef from "@/ef";
 import {
   config,
@@ -7,96 +6,166 @@ import {
   from_Reference_to_IconRoute,
   from_URL_to_iconHref,
   from_URL_to_iconRoute,
+  get_name_of_Resource,
   isoHref,
   isoRoute,
   schemaHref,
   schemaResourceMetadata,
   type ExternalReference,
   type Reference,
+  type Route,
   type Website,
 } from "@/ontology";
 import { showNode } from "@/unified_util";
 import { dedup, dedupInPlace, do_ } from "@/util";
 import { visit } from "unist-util-visit";
 import * as YAML from "yaml";
+import {
+  addBacklinksSection,
+  addPrefixIconsToLinks,
+  addReferencesSection,
+  addTableOfContents,
+  type Backlink,
+} from "@/build/analyze/transforms";
 
 export const analyzeWebsite: ef.T<{
   website: Website;
 }> = ef.run({ label: "analyzeWebsite" }, (input) => async (ctx) => {
   const references_global: Reference[] = [];
 
-  // collect stuff
+  await ef.run(
+    { label: "first pass: individual processing" },
+    () => async (ctx) => {
+      for (const res of input.website.resources) {
+        await ef.run({ label: `route: ${res.route}` }, () => async (ctx) => {
+          if (res.type === "markdown") {
+            await ef.all({
+              opts: {},
+              input: {},
+              ks: do_(() => {
+                const ks: ef.T[] = [];
+                visit(res.root, (node) => {
+                  ks.push(
+                    ef.run({}, () => async (ctx) => {
+                      switch (node.type) {
+                        case "yaml": {
+                          const frontmatter = YAML.parse(node.value);
+                          const metadata =
+                            schemaResourceMetadata.parse(frontmatter);
+                          res.metadata = metadata;
+                          break;
+                        }
+                        //
+                        case "heading": {
+                          if (node.depth === 1)
+                            res.metadata.name === showNode(node);
+                          break;
+                        }
+                        case "textDirective": {
+                          break;
+                        }
+                        //
+                        case "link": {
+                          // convert all fragment hrefs to full hrefs
+                          if (node.url.startsWith("#")) {
+                            node.url = `${res.route}/${node.url}`;
+                          }
 
-  for (const res of input.website.resources) {
-    if (res.type === "markdown") {
-      await ef.all({
-        opts: {},
-        input: {},
-        ks: do_(() => {
-          const ks: ef.T[] = [];
-          visit(res.root, (node) => {
-            ks.push(
-              ef.run({}, () => async (ctx) => {
-                switch (node.type) {
-                  case "yaml": {
-                    const frontmatter = YAML.parse(node.value);
-                    const metadata = schemaResourceMetadata.parse(frontmatter);
-                    res.metadata = metadata;
-                    break;
-                  }
-                  //
-                  case "heading": {
-                    if (node.depth === 1) res.metadata.name === showNode(node);
-                    break;
-                  }
-                  case "textDirective": {
-                    break;
-                  }
-                  //
-                  case "link": {
-                    // convert all fragment hrefs to full hrefs
-                    if (node.url.startsWith("#")) {
-                      node.url = `${res.route}/${node.url}`;
-                    }
-
-                    const href = await ef.successulSafeParse(
-                      schemaHref.safeParse(node.url),
-                    )(ctx);
-                    const ref = from_Href_to_Reference(href);
-                    res.references.push(ref);
-                    references_global.push(ref);
-                    break;
-                  }
-                }
+                          const href = await ef.successfulSafeParse(
+                            schemaHref.safeParse(node.url),
+                          )(ctx);
+                          const ref = from_Href_to_Reference(href);
+                          res.references.push(ref);
+                          references_global.push(ref);
+                          break;
+                        }
+                      }
+                    }),
+                  );
+                });
+                return ks;
               }),
+            })(ctx);
+
+            dedupInPlace(res.references, (x) =>
+              isoHref.unwrap(from_Reference_to_Href(x)),
             );
-          });
-          return ks;
-        }),
-      })(ctx);
+          }
+        })(undefined)(ctx);
+      }
+    },
+  )(undefined)(ctx);
 
-      // organize references
+  const map_Route_to_Backlinks: Map<Route, Backlink[]> = new Map();
 
-      dedupInPlace(res.references, (x) =>
-        isoHref.unwrap(from_Reference_to_Href(x)),
-      );
+  await ef.run(
+    { label: "second pass: relationship processing" },
+    () => async (ctx) => {
+      for (const thisRes of input.website.resources) {
+        await ef.run({ label: `route ${thisRes.route}` }, () => async (ctx) => {
+          switch (thisRes.type) {
+            case "markdown": {
+              const backlinks: Backlink[] = [];
+              for (const otherRes of input.website.resources) {
+                if (
+                  otherRes.references.filter((ref) => {
+                    switch (ref.type) {
+                      case "internal":
+                        return ref.value === thisRes.route;
+                      default:
+                        return false;
+                    }
+                  }).length !== 0
+                ) {
+                  backlinks.push({
+                    name: get_name_of_Resource(otherRes),
+                    route: otherRes.route,
+                  });
+                }
+              }
 
-      await transforms.addReferencesSection({
-        root: res.root,
-        references: res.references,
-      })(ctx);
+              map_Route_to_Backlinks.set(thisRes.route, backlinks);
+            }
+          }
+        })(undefined)(ctx);
+      }
+    },
+  )(undefined)(ctx);
 
-      await transforms.addPrefixIconsToLinks({ root: res.root })(ctx);
+  await ef.run(
+    {
+      label: "third pass: final transformations",
+    },
+    () => async (ctx) => {
+      for (const res of input.website.resources) {
+        await ef.run({ label: `route: ${res.route}` }, () => async (ctx) => {
+          if (res.type === "markdown") {
+            await addReferencesSection({
+              root: res.root,
+              references: res.references,
+            })(ctx);
 
-      // table of contents
+            const backlinks = await ef.defined(
+              map_Route_to_Backlinks.get(res.route),
+            )(ctx);
+            await addBacklinksSection({
+              root: res.root,
+              backlinks,
+            })(ctx);
 
-      await transforms.addTableOfContents({ root: res.root })(ctx);
-    }
-  }
+            await addPrefixIconsToLinks({ root: res.root })(ctx);
+
+            await addTableOfContents({ root: res.root })(ctx);
+          }
+        })(undefined)(ctx);
+      }
+    },
+  )(undefined)(ctx);
 
   dedupInPlace(references_global, (x) =>
     isoHref.unwrap(from_Reference_to_Href(x)),
   );
+
   await useIcons_of_References({ references: references_global })(ctx);
 });
 

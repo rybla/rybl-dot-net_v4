@@ -44,7 +44,7 @@ export const schemaFilepath = z
         s.includes("../") ||
         s.includes("./")
       ),
-    `a Filepath must NOT include: ":", " ", "../", "./"`,
+    "a Filepath must NOT include: ':', ' ', '../', './'",
   )
   .transform(isoFilepath.wrap);
 
@@ -85,7 +85,7 @@ export const schemaRoute = z
       return false;
     }
   }, "a Route must be a valid path")
-  .refine((s) => s.startsWith("/"), `a Route must start with a "/"`)
+  .refine((s) => s.startsWith("/"), `a Route must start with a '/'`)
   .refine(
     (s) =>
       !(
@@ -94,7 +94,7 @@ export const schemaRoute = z
         s.includes("../") ||
         s.includes("./")
       ),
-    `a Route must NOT include: ":", " ", "../", "./"`,
+    `a Route must NOT include: ':', ' ', '../', './'`,
   )
   .transform(isoRoute.wrap);
 
@@ -157,6 +157,9 @@ export const addResource: ef.T<
  * A thing that exists in a {@link Website}.
  */
 export type Resource = MarkdownResource | HtmlResource | RawResource;
+
+export const get_name_of_Resource = (res: Resource) =>
+  res.metadata.name ?? isoRoute.unwrap(res.route);
 
 /**
  * A type common to all {@link Resource}s.

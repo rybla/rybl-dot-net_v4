@@ -6,6 +6,7 @@ import {
   isoHref,
   schemaHref,
   type Reference,
+  type Route,
 } from "@/ontology";
 import { showNode } from "@/unified_util";
 import { encodeURIComponent_better, type Tree } from "@/util";
@@ -27,39 +28,41 @@ export const addPrefixIconsToLinks: ef.T<{ root: mdast.Root }> =
     for (const link of links) await addPrefixIcon({ link })(ctx);
   };
 
-const addPrefixIcon: ef.T<{ link: mdast.Link }> = (input) => async (ctx) => {
-  // await ef.tell(`addPrefixIcon(${input.link.url})`)(ctx);
-  const href = await ef.successulSafeParse(
-    schemaHref.safeParse(input.link.url),
-  )(ctx);
+const addPrefixIcon: ef.T<{ link: mdast.Link }> = ef.run(
+  { label: (input) => ef.label("addPrefixIcon", input.link.url) },
+  (input) => async (ctx) => {
+    const href = await ef.successfulSafeParse(
+      schemaHref.safeParse(input.link.url),
+    )(ctx);
 
-  input.link.data = input.link.data ?? {};
-  input.link.data.hProperties = input.link.data.hProperties ?? {};
-  input.link.data.hProperties.class = "LinkWithIcon";
-  // await ef.tell(`addPrefixIcon: href: ${href}`)(ctx);
-  input.link.children = [
-    {
-      type: "image",
-      data: {
-        hProperties: {
-          class: "icon",
+    input.link.data = input.link.data ?? {};
+    input.link.data.hProperties = input.link.data.hProperties ?? {};
+    input.link.data.hProperties.class = "LinkWithIcon";
+    // await ef.tell(`addPrefixIcon: href: ${href}`)(ctx);
+    input.link.children = [
+      {
+        type: "image",
+        data: {
+          hProperties: {
+            class: "icon",
+          },
         },
+        url: isoHref.unwrap(from_Route_to_Href(from_Href_to_iconRoute(href))),
       },
-      url: isoHref.unwrap(from_Route_to_Href(from_Href_to_iconRoute(href))),
-    },
-    {
-      type: "textDirective",
-      name: "span",
-      data: {
-        hName: "span",
-        hProperties: {
-          class: "label",
+      {
+        type: "textDirective",
+        name: "span",
+        data: {
+          hName: "span",
+          hProperties: {
+            class: "label",
+          },
         },
+        children: input.link.children,
       },
-      children: input.link.children,
-    },
-  ];
-};
+    ];
+  },
+);
 
 export const addTableOfContents: ef.T<{ root: mdast.Root }, void> =
   (input) => async (ctx) => {
@@ -145,30 +148,77 @@ export const addReferencesSection: ef.T<
   const refs: mdast.List = {
     type: "list",
     ordered: false,
-    children: input.references.map(
-      (ref) =>
-        ({
-          type: "listItem",
+    children: input.references.map<mdast.ListItem>((ref) => ({
+      type: "listItem",
+      children: [
+        {
+          type: "paragraph",
           children: [
             {
-              type: "paragraph",
+              type: "link",
+              url: isoHref.unwrap(from_Reference_to_Href(ref)),
               children: [
                 {
-                  type: "link",
-                  url: isoHref.unwrap(from_Reference_to_Href(ref)),
-                  children: [
-                    {
-                      type: "text",
-                      value: isoHref.unwrap(from_Reference_to_Href(ref)),
-                    },
-                  ],
+                  type: "text",
+                  value: isoHref.unwrap(from_Reference_to_Href(ref)),
                 },
               ],
             },
           ],
-        }) as mdast.ListItem,
-    ),
+        },
+      ],
+    })),
   };
 
   input.root.children.splice(input.root.children.length, 0, heading, refs);
+};
+
+export type Backlink = {
+  name: string;
+  route: Route;
+};
+
+export const addBacklinksSection: ef.T<
+  { root: mdast.Root; backlinks: Backlink[] },
+  void
+> = (input) => async (ctx) => {
+  if (input.backlinks.length === 0) return;
+
+  const heading: mdast.Heading = {
+    type: "heading",
+    depth: 2,
+    children: [
+      {
+        type: "text",
+        value: "Backlinks",
+      },
+    ],
+  };
+
+  const backlinks: mdast.List = {
+    type: "list",
+    ordered: false,
+    children: input.backlinks.map<mdast.ListItem>((bl) => ({
+      type: "listItem",
+      children: [
+        {
+          type: "paragraph",
+          children: [
+            {
+              type: "link",
+              url: isoHref.unwrap(from_Route_to_Href(bl.route)),
+              children: [
+                {
+                  type: "text",
+                  value: bl.name,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    })),
+  };
+
+  input.root.children.splice(input.root.children.length, 0, heading, backlinks);
 };

@@ -254,13 +254,13 @@ export const defined: <A>(
   return a;
 };
 
-export const successulSafeParse =
+export const successfulSafeParse =
   <Input, Output>(x: z.SafeParseReturnType<Input, Output>) =>
   async (ctx: Ctx.T): Promise<Output> => {
     if (x.success) {
       return x.data;
     } else {
-      throw new EfError(label("successulSafeParse", x));
+      throw new EfError(label("successfulSafeParse", x, x.error.toString()));
     }
   };
 
