@@ -1,21 +1,12 @@
 ---
 type: post
 tags:
-  - test1
-  - test2
-  - test3
-abstract: |
-  This is a test.
+  - example
+  - test
 ---
 
-# Test
+:::thumbnail{title="This is Google" url="https://www.google.com"}
 
-This is a test. This is [a test link](https://www.google.com). This is [another test link](https://www.google.com). And finally this is [one more test link](https://www.github.com).
+This is the inside of a thumbnail.
 
-## Section 1
-
-This is a section 1.
-
-## Section 2
-
-This is a section 1.
+:::

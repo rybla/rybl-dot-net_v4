@@ -31,7 +31,7 @@ export type OptionalizeRecord<R extends Record> = {
 };
 
 export const encodeURIComponent_better = (s: string) =>
-  encodeURIComponent(s.replaceAll(/(:|_|\/)/g, "_"));
+  encodeURIComponent(s.replaceAll(/(:|_|\/)/g, "_")).slice(0, 225);
 
 export type Ref<A> = { value: A };
 export const Ref = <A>(value: A): Ref<A> => ({ value });

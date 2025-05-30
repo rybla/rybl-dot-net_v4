@@ -279,7 +279,7 @@ export const from_URL_to_iconHref = (url: URL): Href => {
  * Note that it doesn't add a file extension. This is file for URLs, apparently.
  */
 export const from_URL_to_iconRoute = (url: URL): Route =>
-  schemaRoute.parse(`/icon/${encodeURIComponent_better(url.hostname)}`);
+  schemaRoute.parse(`/asset/icon/${encodeURIComponent_better(url.hostname)}`);
 
 // from_HRef_*
 
@@ -343,7 +343,7 @@ export const config = do_(() => {
 
     iconRoute_placeholder: schemaRoute.parse("/asset/icon/placeholder.ico"),
 
-    timeout_of_fetch: 5000,
+    timeout_of_fetch: 2000,
     batchSize_of_postAnalysis: 10,
 
     using_cache: true,
@@ -353,6 +353,7 @@ export const config = do_(() => {
     route_of_icons: schemaRoute.parse("/asset/icon"),
     route_of_images: schemaRoute.parse("/asset/image"),
     route_of_fonts: schemaRoute.parse("/asset/font"),
+    route_of_scripts: schemaRoute.parse("/asset/script"),
 
     dateFormats_parse: ["yyyy-mm-dd", "yyyy/mm/dd", "MMM dd, yyyy"],
     dateFormat_print: "MMM dd, yyyy",

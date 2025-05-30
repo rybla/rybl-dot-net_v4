@@ -1,8 +1,8 @@
 import * as ef from "@/ef";
-import type { PromiseElement } from "@/ontology";
+import { type PromiseElement } from "@/ontology";
+import * as mdast from "mdast";
 
 import * as hast from "hast";
-import * as mdast from "mdast";
 import rehypeFormat from "rehype-format";
 import rehypeMathJaxSvg from "rehype-mathjax/svg";
 import rehypeStringify from "rehype-stringify";

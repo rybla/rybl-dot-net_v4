@@ -7,4 +7,20 @@ main {
         background: var(--panel--background);
         backdrop-filter: var(--panel--backdrop-filter);
     }
+
+    /* TODO: sticker-header */
+    /* h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        position: sticky;
+        z-index: 0;
+    }
+
+    .current-sticky-header {
+        z-index: 1;
+        background-color: white;
+    } */
 }

@@ -8,7 +8,7 @@ import {
 } from "@/ontology";
 import { render_jsx } from "@/util";
 import IndexPage from "./component/IndexPage";
-import Markdown from "./component/Markdown";
+import Post from "./component/Post";
 import TagsPage from "./component/TagsPage";
 import Top from "./component/Top";
 
@@ -19,6 +19,7 @@ export const generateWebsite: ef.T<{
   await useIcons({})(ctx);
   await useImages({})(ctx);
   await useFonts({})(ctx);
+  await useScripts({})(ctx);
   await generatePages({ website: input.website })(ctx);
   await generateResources({ resources: input.website.resources })(ctx);
 });
@@ -67,6 +68,20 @@ const useFonts: ef.T = ef.run({ label: "useFonts" }, () => async (ctx) => {
     opts: {},
     input: {},
     ks: routes_of_fonts.map((route) =>
+      ef.run({}, () => ef.useLocalFile({ input: route })),
+    ),
+  })(ctx);
+});
+
+const useScripts: ef.T = ef.run({ label: "useScripts" }, () => async (ctx) => {
+  const routes_of_scripts = await ef.getSubRoutes({
+    route: config.route_of_scripts,
+  })(ctx);
+
+  await ef.all({
+    opts: {},
+    input: {},
+    ks: routes_of_scripts.map((route) =>
       ef.run({}, () => ef.useLocalFile({ input: route })),
     ),
   })(ctx);
@@ -131,24 +146,9 @@ const generatePost: ef.T<{ resource: PostResource }> = ef.run(
     label: (input) => ef.label("generatePost", input.resource.route),
   },
   (input) => async (ctx) => {
-    const content = await render_jsx(
-      <Top
-        resource_name={get_name_of_Resource(input.resource)}
-        content_head={
-          <>
-            <link rel="stylesheet" href="/asset/style/Post.css" />
-          </>
-        }
-      >
-        <div class="content">
-          <Markdown ctx={ctx} root={input.resource.root} />
-        </div>
-      </Top>,
-    );
-
     await ef.setRoute_textFile({
       route: input.resource.route,
-      content,
+      content: await render_jsx(<Post ctx={ctx} resource={input.resource} />),
     })(ctx);
   },
 );

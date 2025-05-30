@@ -1,11 +1,15 @@
 import * as ef from "@/ef";
+import YAML from "yaml";
+import * as mdast from "mdast";
 import {
   addResource,
   config,
   isoRoute,
+  schemaResourceMetadata,
   schemaRoute,
   type PostResource,
   type Resource,
+  type ResourceMetadata,
   type Route,
   type Website,
 } from "@/ontology";
@@ -15,6 +19,8 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import remarkParse from "remark-parse";
 import { unified } from "unified";
+import { visit } from "unist-util-visit";
+import { showNode } from "@/unified_util";
 
 export const parseWebsite: ef.T<unknown, Website> = ef.run(
   { label: "parseWebsite" },
@@ -85,19 +91,43 @@ const parsePost: ef.T<{ route: Route }, Resource> = ef.run(
   { label: (input) => ef.label("parsePost", input.route) },
   (input) => async (ctx) => {
     const content = await ef.getRoute_textFile({ route: input.route })(ctx);
+    let metadata: ResourceMetadata = {};
 
     const root = unified()
       .use(remarkParse)
       .use(remarkFrontmatter, ["yaml"])
+      .use(() => (root: mdast.Root) => {
+        console.log("got here");
+        visit(root, (node) => {
+          if (node.type === "yaml") {
+            console.log(`yaml: ${node.value}`);
+            const frontmatter = YAML.parse(node.value);
+            metadata = schemaResourceMetadata.parse(frontmatter);
+            console.log(`yaml parsed: ${metadata}`);
+            if (metadata.abstract !== undefined) {
+              metadata.abstract_markdown = unified()
+                .use(remarkParse)
+                .use(remarkGfm)
+                .use(remarkDirective)
+                .use(remarkMath, { singleDollarTextMath: false })
+                .parse(metadata.abstract);
+            }
+          } else if (node.type === "heading" && node.depth === 1) {
+            metadata.name = showNode(node);
+          }
+        });
+      })
       .use(remarkGfm)
       .use(remarkDirective)
       .use(remarkMath, { singleDollarTextMath: false })
       .parse(content);
 
+    await ef.tellJSON(metadata)(ctx);
+
     return {
       route: isoRoute.modify((r) => r.replace(".md", ".html"))(input.route),
       references: [],
-      metadata: {},
+      metadata,
       type: "post",
       root,
     };

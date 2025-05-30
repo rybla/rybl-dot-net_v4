@@ -7,6 +7,7 @@ import {
 } from "@/ontology";
 import Tag from "./Tag";
 import ParsedDate from "./ParsedDate";
+import Post from "./Post";
 import Markdown from "./Markdown";
 
 export default async function PostPreview(props: {

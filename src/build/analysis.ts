@@ -1,5 +1,5 @@
-import * as mutation from "@/build/analysis/mutation";
 import * as homomorphism from "@/build/analysis/homomorphism";
+import * as mutation from "@/build/analysis/mutation";
 import * as ef from "@/ef";
 import {
   config,
@@ -20,7 +20,6 @@ import {
 } from "@/ontology";
 import { showNode } from "@/unified_util";
 import { dedup, dedupInPlace, do_ } from "@/util";
-import * as mdast from "mdast";
 import { visit } from "unist-util-visit";
 import * as YAML from "yaml";
 
@@ -44,20 +43,7 @@ export const analyzeWebsite: ef.T<{
                 ks.push(
                   ef.run({}, () => async (ctx) => {
                     switch (node.type) {
-                      case "yaml": {
-                        const frontmatter = YAML.parse(node.value);
-                        const metadata =
-                          schemaResourceMetadata.parse(frontmatter);
-                        res.metadata = metadata;
-                        break;
-                      }
                       //
-                      case "heading": {
-                        if (node.depth === 1) {
-                          res.metadata.name = showNode(node);
-                        }
-                        break;
-                      }
                       case "textDirective": {
                         break;
                       }
@@ -176,6 +162,17 @@ export const analyzeWebsite: ef.T<{
               route: res.route,
               root: res.root,
             })(ctx);
+
+            // process abstract
+            if (res.metadata.abstract_markdown !== undefined) {
+              await homomorphism.applyHomomorphisms({
+                root: res.metadata.abstract_markdown,
+                params: {},
+                homomorphisms: {
+                  stylizeLink: homomorphism.stylizeLink,
+                },
+              })(ctx);
+            }
           }
         })(undefined)(ctx);
       }

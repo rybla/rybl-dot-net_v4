@@ -217,9 +217,7 @@ export const useRemoteFile: T<{
    */
   input_default?: Route;
 }> = run(
-  {
-    label: (input) => label("useRemoteFile", { href: input.href }),
-  },
+  { label: (input) => label("useRemoteFile", { href: input.href }) },
   (input) => async (ctx) => {
     const filepath_output = from_Route_to_outputFilepath(input.output);
     try {
@@ -233,7 +231,7 @@ export const useRemoteFile: T<{
           signal: AbortSignal.timeout(config.timeout_of_fetch),
         });
         if (!response.ok)
-          throw new EfError(`Failed to download file from ${input.href}`);
+          throw new Error(`Failed to download file from ${input.href}`);
         const blob = await response.blob();
         const arrayBuffer = await blob.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
@@ -253,7 +251,7 @@ export const useRemoteFile: T<{
           isoFilepath.unwrap(filepath_output),
         );
       } else {
-        throw new EfError(label("useRemoteFile", input, e.message));
+        throw new EfError(e.message);
       }
     }
   },
@@ -353,60 +351,70 @@ export const fetchExternalReferenceMetadata: T<
 export const fetchTitle: T<{ url: URL }, string | undefined> = run(
   { label: (input) => label("fetchTitle", input) },
   (input) => async (ctx) => {
-    const response = await fetch(input.url.toString());
+    try {
+      const response = await fetch(input.url.toString(), {
+        redirect: "follow",
+        signal: AbortSignal.timeout(config.timeout_of_fetch),
+      });
 
-    if (!response.ok) {
-      await tell(
-        `Failed to fetch article: ${response.status} ${response.statusText}`,
-      )(ctx);
+      if (!response.ok) {
+        await tell(
+          `Failed to fetch article: ${response.status} ${response.statusText}`,
+        )(ctx);
+        return undefined;
+      }
+
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("text/html")) {
+        await tell(`Expected HTML content, but got ${contentType}`)(ctx);
+        return undefined;
+      }
+
+      const htmlContent = await response.text();
+      const dom = new JSDOM(htmlContent);
+      const document = dom.window.document;
+
+      const title = await do_(async () => {
+        const ogTitle = document.querySelector('meta[property="og:title"]');
+        if (ogTitle) {
+          const title = ogTitle.getAttribute("content")?.trim();
+          if (title) return title;
+        }
+
+        const twitterTitle = document.querySelector(
+          'meta[name="twitter:title"]',
+        );
+        if (twitterTitle) {
+          const title = twitterTitle.getAttribute("content")?.trim();
+          if (title) return title;
+        }
+
+        const titleTag = document.querySelector("title");
+        if (titleTag) {
+          const title = titleTag.textContent?.trim();
+          if (title) return title;
+        }
+
+        const h1Tag = document.querySelector("h1");
+        if (h1Tag) {
+          const title = h1Tag.textContent?.trim();
+          if (title) return title;
+        }
+      });
+      if (title === undefined) return undefined;
+
+      if (input.url.hash !== "") {
+        const e = document.getElementById(input.url.hash);
+        if (e === null) return title;
+        if (e.textContent === null) return title;
+        if (e.textContent === "") return title;
+        return `${title} –– ${e.textContent}`;
+      } else {
+        return title;
+      }
+    } catch (e: any) {
+      await tell(e.toString())(ctx);
       return undefined;
-    }
-
-    const contentType = response.headers.get("content-type");
-    if (!contentType || !contentType.includes("text/html")) {
-      await tell(`Expected HTML content, but got ${contentType}`)(ctx);
-      return undefined;
-    }
-
-    const htmlContent = await response.text();
-    const dom = new JSDOM(htmlContent);
-    const document = dom.window.document;
-
-    const title = await do_(async () => {
-      const ogTitle = document.querySelector('meta[property="og:title"]');
-      if (ogTitle) {
-        const title = ogTitle.getAttribute("content")?.trim();
-        if (title) return title;
-      }
-
-      const twitterTitle = document.querySelector('meta[name="twitter:title"]');
-      if (twitterTitle) {
-        const title = twitterTitle.getAttribute("content")?.trim();
-        if (title) return title;
-      }
-
-      const titleTag = document.querySelector("title");
-      if (titleTag) {
-        const title = titleTag.textContent?.trim();
-        if (title) return title;
-      }
-
-      const h1Tag = document.querySelector("h1");
-      if (h1Tag) {
-        const title = h1Tag.textContent?.trim();
-        if (title) return title;
-      }
-    });
-    if (title === undefined) return undefined;
-
-    if (input.url.hash !== "") {
-      const e = document.getElementById(input.url.hash);
-      if (e === null) return title;
-      if (e.textContent === null) return title;
-      if (e.textContent === "") return title;
-      return `${title} –– ${e.textContent}`;
-    } else {
-      return title;
     }
   },
 );
