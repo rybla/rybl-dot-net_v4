@@ -310,7 +310,7 @@ export const config = do_(() => {
     iconRoute_placeholder: schemaRoute.parse("/asset/icon/placeholder.ico"),
 
     timeout_of_fetch: 5000,
-    size_of_batched_posts_batch: 10,
+    batchSize_of_postAnalysis: 10,
 
     using_cache: true,
     using_batched_posts: true,

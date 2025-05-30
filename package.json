@@ -44,7 +44,8 @@
     "@types/react-dom": "^19.1.5"
   },
   "scripts": {
-    "dev": "tsx dev.ts",
-    "clean": "rm -rf cache && rm -rf docs"
+    "clean": "rm -rf cache && rm -rf docs",
+    "build": "bun src/build.ts",
+    "serve": "bun src/serve.ts"
   }
 }

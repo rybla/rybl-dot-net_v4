@@ -1,5 +1,6 @@
+import * as mutation from "@/build/analysis/mutation";
+import * as homomorphism from "@/build/analysis/homomorphism";
 import * as ef from "@/ef";
-import * as mdast from "mdast";
 import {
   config,
   from_Href_to_Reference,
@@ -19,16 +20,9 @@ import {
 } from "@/ontology";
 import { showNode } from "@/unified_util";
 import { dedup, dedupInPlace, do_ } from "@/util";
+import * as mdast from "mdast";
 import { visit } from "unist-util-visit";
 import * as YAML from "yaml";
-import {
-  addBacklinksSection,
-  stylizeLink,
-  addReferencesSection,
-  addTableOfContents,
-  type Backlink,
-} from "@/build/analyze/transforms";
-import { fetch } from "bun";
 
 export const analyzeWebsite: ef.T<{
   website: Website;
@@ -108,14 +102,14 @@ export const analyzeWebsite: ef.T<{
     }
   })(undefined)(ctx);
 
-  const map_Route_to_Backlinks: Map<Route, Backlink[]> = new Map();
+  const map_Route_to_Backlinks: Map<Route, mutation.Backlink[]> = new Map();
 
   await ef.run({ label: "relationship processing" }, () => async (ctx) => {
     for (const thisRes of input.website.resources) {
       await ef.run({ label: `route: ${thisRes.route}` }, () => async (ctx) => {
         switch (thisRes.type) {
           case "markdown": {
-            const backlinks: Backlink[] = [];
+            const backlinks: mutation.Backlink[] = [];
             for (const otherRes of input.website.resources) {
               if (
                 otherRes.references.filter((ref) => {
@@ -145,9 +139,7 @@ export const analyzeWebsite: ef.T<{
     isoHref.unwrap(from_Reference_to_Href(x)),
   );
 
-  // TODO: populate reference metadata
   await populateMetadata_of_References({ references: references_global })(ctx);
-
   await useIcons_of_References({ references: references_global })(ctx);
 
   await ef.run(
@@ -158,7 +150,7 @@ export const analyzeWebsite: ef.T<{
       for (const res of input.website.resources) {
         await ef.run({ label: `route: ${res.route}` }, () => async (ctx) => {
           if (res.type === "markdown") {
-            await addReferencesSection({
+            await mutation.addReferencesSection({
               root: res.root,
               resources: input.website.resources,
               references: res.references,
@@ -167,32 +159,23 @@ export const analyzeWebsite: ef.T<{
             const backlinks = await ef.defined(
               map_Route_to_Backlinks.get(res.route),
             )(ctx);
-            await addBacklinksSection({
+            await mutation.addBacklinksSection({
               root: res.root,
               backlinks,
             })(ctx);
 
-            const links: mdast.Link[] = [];
-            const headings: mdast.Heading[] = [];
+            await homomorphism.applyHomomorphisms({
+              root: res.root,
+              params: {},
+              homomorphisms: {
+                stylizeLink: homomorphism.stylizeLink,
+              },
+            })(ctx);
 
-            visit(res.root, (node) => {
-              switch (node.type) {
-                case "link": {
-                  links.push(node);
-                  break;
-                }
-                case "heading": {
-                  headings.push(node);
-                  break;
-                }
-              }
-            });
-
-            for (const link of links) {
-              await stylizeLink({ link })(ctx);
-            }
-
-            await addTableOfContents({ route: res.route, root: res.root })(ctx);
+            await mutation.addTableOfContents({
+              route: res.route,
+              root: res.root,
+            })(ctx);
           }
         })(undefined)(ctx);
       }

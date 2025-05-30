@@ -32,72 +32,8 @@ import { visit } from "unist-util-visit";
 //     for (const link of links) await addPrefixIcon({ link })(ctx);
 //   };
 
-declare module "mdast" {
-  interface LinkData {
-    skip_stylizeLink?: boolean;
-  }
-}
-
-export const stylizeLink: ef.T<{ link: mdast.Link }> = ef.run(
-  {
-    // label: (input) => ef.label("addPrefixIcon", input.link.url),
-  },
-  (input) => async (ctx) => {
-    if (input.link.data?.skip_stylizeLink) return;
-
-    const href = await ef.successfulSafeParse(
-      schemaHref.safeParse(input.link.url),
-    )(ctx);
-
-    input.link.data = input.link.data ?? {};
-    input.link.data.hProperties = input.link.data.hProperties ?? {};
-    input.link.data.hProperties.class = "LinkWithIcon";
-    input.link.children = [
-      {
-        type: "image",
-        data: {
-          hProperties: {
-            class: "icon",
-          },
-        },
-        url: isoHref.unwrap(from_Route_to_Href(from_Href_to_iconRoute(href))),
-      },
-      {
-        type: "textDirective",
-        name: "span",
-        data: {
-          hName: "span",
-          hProperties: {
-            class: "label",
-          },
-        },
-        children: input.link.children,
-      },
-    ];
-  },
-);
-
-declare module "mdast" {
-  interface HeadingData {
-    skip_stylizeHeading?: boolean;
-  }
-}
-
-// export const stylizeHeading: ef.T<{ route: Route; heading: mdast.Heading }> =
-//   (input) => async (ctx) => {
-//     if (input.heading.data?.skip_stylizeHeading) return;
-
-//     input.heading.children = [
-//       {
-//         type: "link",
-//         url: `${config.url_of_website.toString()}/${input.route}#${1}`,
-//         children: input.heading.children,
-//       },
-//     ];
-//   };
-
 export const addTableOfContents: ef.T<{ route: Route; root: mdast.Root }> =
-  (input) => async (ctx) => {
+  ef.run({ label: "addTableOfContents" }, (input) => async (ctx) => {
     const headings_forest: Tree<{ id: string; value: string }>[] = [];
     visit(input.root, (node) => {
       if (node.type === "heading") {
@@ -106,7 +42,6 @@ export const addTableOfContents: ef.T<{ route: Route; root: mdast.Root }> =
         node.data = node.data ?? {};
         node.data.hProperties = node.data.hProperties ?? {};
         node.data.hProperties.id = id;
-        node.data.hProperties.class = "section-header";
         node.children = [
           {
             type: "link",
@@ -165,12 +100,12 @@ export const addTableOfContents: ef.T<{ route: Route; root: mdast.Root }> =
     if (title_index === -1) return;
 
     input.root.children.splice(title_index + 1, 0, tableOfContents);
-  };
+  });
 
 export const addReferencesSection: ef.T<
   { root: mdast.Root; resources: Resource[]; references: Reference[] },
   void
-> = (input) => async (ctx) => {
+> = ef.run({ label: "addReferencesSection" }, (input) => async (ctx) => {
   if (input.references.length === 0) return;
 
   const heading: mdast.Heading = {
@@ -220,7 +155,7 @@ export const addReferencesSection: ef.T<
   };
 
   input.root.children.splice(input.root.children.length, 0, heading, refs);
-};
+});
 
 export type Backlink = {
   name: string;
@@ -230,7 +165,7 @@ export type Backlink = {
 export const addBacklinksSection: ef.T<
   { root: mdast.Root; backlinks: Backlink[] },
   void
-> = (input) => async (ctx) => {
+> = ef.run({ label: "addBacklinksSection" }, (input) => async (ctx) => {
   if (input.backlinks.length === 0) return;
 
   const heading: mdast.Heading = {
@@ -270,4 +205,4 @@ export const addBacklinksSection: ef.T<
   };
 
   input.root.children.splice(input.root.children.length, 0, heading, backlinks);
-};
+});

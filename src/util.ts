@@ -1,18 +1,20 @@
-import { iso, type Newtype } from "newtype-ts";
-import path from "path";
-import { z } from "zod";
+export type UnionToIntersection<U> = (
+  U extends any ? (k: U) => void : never
+) extends (k: infer I) => void
+  ? I
+  : never;
 
 export type Record = { [key: string]: any };
 
 export const do_ = <A>(k: () => A) => k();
 
-export const indentation = (level: number) => " ".repeat(level * 2);
+export const indentation = (level: number) => "│ ".repeat(level * 2);
 
 export const indentString = (level: number, s: string) => {
   const i = indentation(level);
   return s
     .split("\n")
-    .map((s) => `${i}│ ${s}`)
+    .map((s) => `${i}${s}`)
     .join("\n");
 };
 

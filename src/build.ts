@@ -1,12 +1,12 @@
-import * as analyze from "@/build/analyze";
-import * as generate from "@/build/generate";
-import * as parse from "@/build/parse";
+import * as analysis from "@/build/analysis";
+import * as generation from "@/build/generation";
+import * as parsing from "@/build/parsing";
 import * as ef from "@/ef";
 
 const build: ef.T = ef.run({ label: "build" }, (input) => async (ctx) => {
-  const website = await parse.parseWebsite({})(ctx);
-  await analyze.analyzeWebsite({ website })(ctx);
-  await generate.generateWebsite({ website })(ctx);
+  const website = await parsing.parseWebsite({})(ctx);
+  await analysis.analyzeWebsite({ website })(ctx);
+  await generation.generateWebsite({ website })(ctx);
 });
 
 build({})({
