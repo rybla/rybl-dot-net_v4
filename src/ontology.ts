@@ -301,6 +301,15 @@ export const config = do_(() => {
     input_iconRoute_of_website: schemaRoute.parse("/asset/icon/favicon.ico"),
     iconRoute_of_website: schemaRoute.parse("/favicon.ico"),
 
+    // useful URLs
+    url_of_github: new URL("https://github.com/rybla/"),
+
+    route_of_Index: schemaRoute.parse("/index.html"),
+    route_of_Tags: schemaRoute.parse("/Tags.html"),
+    route_of_About: schemaRoute.parse("/About.html"),
+
+    route_of_profileImage: schemaRoute.parse("/asset/image/profile.png"),
+
     dirpaths_of_watchers: ["src", "input"].map((x) => schemaFilepath.parse(x)),
 
     dirpath_of_output: schemaFilepath.parse("docs"),
@@ -316,5 +325,7 @@ export const config = do_(() => {
     using_batched_posts: true,
 
     route_of_styles: schemaRoute.parse("/asset/style"),
+    route_of_icons: schemaRoute.parse("/asset/icon"),
+    route_of_images: schemaRoute.parse("/asset/image"),
   };
 });

@@ -1,0 +1,33 @@
+.PostPreview {
+    /* padding: 1em; */
+    /* background: var(--accent--background); */
+    /* background: var(--secondary--color); */
+
+    display: flex;
+    flex-direction: column;
+    /* gap: 0.5em; */
+
+    /* & > .name {
+        padding: 0.5em;
+        background: var(--accent--background);
+
+        h1 {
+            font-size: 1.5em;
+            color: var(--accent--foreground);
+        }
+    } */
+
+    & > .pubDate {
+        padding: 1em;
+        padding-bottom: 0;
+    }
+
+    & > .tags {
+        padding: 1em;
+        padding-bottom: 0;
+    }
+
+    & > .abstract {
+        padding: 1em;
+    }
+}

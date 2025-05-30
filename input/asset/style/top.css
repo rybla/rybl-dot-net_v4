@@ -1,0 +1,46 @@
+html {
+    scroll-behavior: smooth;
+
+    margin: 0;
+    padding: 0;
+
+    /* disable scrollbar */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+body {
+    margin: 0;
+    padding: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    background: var(--body--background);
+    color: var(--body--foreground);
+
+    font-family: Spectral, serif;
+    font-size: 14pt;
+    line-height: 1.5em;
+}
+
+main {
+    z-index: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    margin: auto;
+    max-width: calc(min(var(--main--width), 100vw));
+}
+
+code {
+    font-family: Iosevka, monospace;
+}
+
+*:target {
+    box-shadow: var(--target--box-shadow);
+}

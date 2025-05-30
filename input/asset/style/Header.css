@@ -1,0 +1,105 @@
+header {
+    padding: 1em 0;
+
+    margin: auto;
+    width: calc(min(var(--main--width), 100vw));
+
+    display: flex;
+    flex-direction: column;
+    gap: 0.2em;
+    align-items: stretch;
+    justify-content: stretch;
+
+    filter: invert(100%);
+
+    a {
+        /* color: white; */
+        color: black;
+        background: none;
+        box-shadow: none;
+
+        &:hover {
+            background: none;
+            /* box-shadow: 0 -0.1em 0 0 white inset; */
+            box-shadow: 0 -0.1em 0 0 black inset;
+        }
+    }
+
+    & > .logo {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+
+        & > img {
+            width: 1.8em;
+            height: 1.8em;
+
+            /* filter: invert(1); */
+        }
+    }
+
+    & > .name {
+        display: flex;
+        flex-direction: row;
+        align-items: stretch;
+        /* justify-content: center; */
+        /* gap: 0.5em; */
+        min-height: 2em;
+        font-size: 1em;
+
+        & > .website_name {
+            flex: 1 1 40%;
+            padding: 0.5em;
+            /* box-shadow: 0 0 0 0.1em red; */
+
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: center;
+
+            & > a {
+                /* color: white; */
+                color: black;
+            }
+        }
+
+        & > .separator {
+            flex: 0 0 0.1em;
+            /* width: 0.1em; */
+            /* background: white; */
+            background: black;
+        }
+
+        & > .resource_name {
+            flex: 1 1 40%;
+            padding: 0.5em;
+            /* box-shadow: 0 0 0 0.1em red; */
+
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+
+            /* color: white; */
+            color: black;
+        }
+    }
+
+    & > .menu {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: stretch;
+        justify-content: center;
+        gap: 1em;
+
+        & > a {
+            /* this is needed since there's no text in the row */
+            padding-bottom: 0.2em;
+
+            /* color: white; */
+            color: black;
+        }
+    }
+}

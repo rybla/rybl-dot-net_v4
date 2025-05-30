@@ -1,0 +1,13 @@
+.Tag {
+    display: inline-flex;
+    flex-direction: row;
+    gap: 0.2em;
+
+    & > .icon {
+        align-self: center;
+    }
+
+    & > .name {
+        align-self: baseline;
+    }
+}

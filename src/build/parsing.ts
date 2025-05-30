@@ -89,9 +89,9 @@ const parsePost: ef.T<{ route: Route }, Resource> = ef.run(
     const root = unified()
       .use(remarkParse)
       .use(remarkFrontmatter, ["yaml"])
-      .use(remarkDirective)
       .use(remarkGfm)
-      .use(remarkMath)
+      .use(remarkDirective)
+      .use(remarkMath, { singleDollarTextMath: false })
       .parse(content);
 
     return {
