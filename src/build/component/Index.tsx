@@ -6,8 +6,8 @@ export default function Index(props: { previews: JSX.Element[] }): JSX.Element {
       resource_name="Index"
       content_head={
         <>
-          <link rel="stylesheet" href="/Index.css" />
-          <link rel="stylesheet" href="/PostPreview.css" />
+          <link rel="stylesheet" href="/asset/style/Index.css" />
+          <link rel="stylesheet" href="/asset/style/PostPreview.css" />
         </>
       }
     >

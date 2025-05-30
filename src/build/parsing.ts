@@ -4,7 +4,7 @@ import {
   config,
   isoRoute,
   schemaRoute,
-  type MarkdownResource,
+  type PostResource,
   type Resource,
   type Route,
   type Website,
@@ -57,7 +57,7 @@ const parsePosts: ef.T<unknown, Resource[]> = ef.run(
                     ),
                     references: [],
                     metadata: {},
-                    type: "markdown",
+                    type: "post",
                     root: {
                       type: "root",
                       children: [
@@ -67,7 +67,7 @@ const parsePosts: ef.T<unknown, Resource[]> = ef.run(
                         },
                       ],
                     },
-                  } as MarkdownResource,
+                  } as PostResource,
                 ];
               },
             },
@@ -98,7 +98,7 @@ const parsePost: ef.T<{ route: Route }, Resource> = ef.run(
       route: isoRoute.modify((r) => r.replace(".md", ".html"))(input.route),
       references: [],
       metadata: {},
-      type: "markdown",
+      type: "post",
       root,
     };
   },

@@ -3,7 +3,8 @@ import {
   config,
   get_name_of_Resource,
   isoRoute,
-  type MarkdownResource,
+  type PostResource,
+  type PromiseElement,
   type Resource,
   type Website,
 } from "@/ontology";
@@ -17,6 +18,8 @@ import Top from "./component/Top";
 import rehypeMathJaxSvg from "rehype-mathjax/svg";
 import Index from "./component/Index";
 import Html from "@kitajs/html";
+import Markdown from "./component/Markdown";
+import PostPreview from "./component/PostPreview";
 
 export const generateWebsite: ef.T<{
   website: Website;
@@ -71,26 +74,20 @@ const generatePages: ef.T<{ website: Website }> = ef.run(
       input: {},
       ks: [
         ef.run({ label: "generateIndex" }, () => async (ctx) => {
-          const previews: JSX.Element[] = await ef.all({
+          const previews: JSX.Element[] = await ef.all<{}, JSX.Element>({
             opts: {},
             input: {},
-            ks: input.website.resources.flatMap((res) => {
-              switch (res.type) {
-                case "markdown": {
-                  return [
-                    ef.run({}, () => async (ctx) => {
-                      return await render_jsx(
-                        <div safe>
-                          TODO: PostPreview for {isoRoute.unwrap(res.route)}
-                        </div>,
-                      );
-                    }),
-                  ];
+            ks: input.website.resources.filterMap<ef.T<{}, JSX.Element>>(
+              (res) => {
+                switch (res.type) {
+                  case "post": {
+                    return ef.run({}, () => async (ctx) => (
+                      <PostPreview ctx={ctx} resource={res} />
+                    ));
+                  }
                 }
-                default:
-                  return [];
-              }
-            }),
+              },
+            ),
           })(ctx);
 
           await ef.setRoute_textFile({
@@ -111,8 +108,8 @@ const generateResources: ef.T<{ resources: Resource[] }> = ef.run(
       input: {},
       ks: input.resources.flatMap((resource) => {
         switch (resource.type) {
-          case "markdown": {
-            return [ef.run({}, () => generateMarkdownPost({ resource }))];
+          case "post": {
+            return [ef.run({}, () => generatePost({ resource }))];
           }
           default:
             return [];
@@ -122,22 +119,11 @@ const generateResources: ef.T<{ resources: Resource[] }> = ef.run(
   },
 );
 
-const generateMarkdownPost: ef.T<{ resource: MarkdownResource }> = ef.run(
+const generatePost: ef.T<{ resource: PostResource }> = ef.run(
   {
-    label: (input) => ef.label("generateMarkdownPost", input.resource.route),
+    label: (input) => ef.label("generatePost", input.resource.route),
   },
   (input) => async (ctx) => {
-    const root_hast: hast.Root = await unified()
-      //
-      .use(remarkRehype)
-      .run(input.resource.root);
-    const mainContent = unified()
-      //
-      .use(rehypeMathJaxSvg)
-      .use(rehypeFormat, {})
-      .use(rehypeStringify, {})
-      .stringify(root_hast);
-
     const content = await render_jsx(
       <Top
         resource_name={get_name_of_Resource(input.resource)}
@@ -147,7 +133,9 @@ const generateMarkdownPost: ef.T<{ resource: MarkdownResource }> = ef.run(
           </>
         }
       >
-        <div class="content">{mainContent as "safe"}</div>
+        <div class="content">
+          <Markdown ctx={ctx} root={input.resource.root} />
+        </div>
       </Top>,
     );
 

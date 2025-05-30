@@ -22,6 +22,7 @@ export default function Top(props: {
             {config.name_of_website} | {props.resource_name}
           </title>
           <link rel="stylesheet" href="/asset/style/common.css" />
+          <link rel="stylesheet" href="/asset/style/util.css" />
           <link rel="stylesheet" href="/asset/style/Top.css" />
           <link rel="stylesheet" href="/asset/style/Header.css" />
           <link rel="stylesheet" href="/asset/style/Footer.css" />

@@ -5,6 +5,8 @@ import { iso, type Newtype } from "newtype-ts";
 import path from "path";
 import { z } from "zod";
 
+export type PromiseElement = Promise<string>;
+
 export interface Filename
   extends Newtype<{ readonly tagFilename: unique symbol }, string> {}
 export const isoFilename = iso<Filename>();
@@ -109,6 +111,9 @@ export const from_Href_to_Route = (href: Href): Route | undefined => {
 export const joinRoutes = (...rs: Route[]): Route =>
   schemaRoute.parse(rs.map(isoRoute.unwrap).join(""));
 
+export const at_id_of_Route = (r: Route, id: string): Route =>
+  schemaRoute.parse(`${isoRoute.unwrap(r)}#${id}`);
+
 /**
  * An {@link Href} is a hyper-reference that can be either local ("/" followed by a filepath) or remote (a URL).
  * Local {@link Href}s always begin with "/".
@@ -156,7 +161,7 @@ export const addResource: ef.T<
 /**
  * A thing that exists in a {@link Website}.
  */
-export type Resource = MarkdownResource | HtmlResource | RawResource;
+export type Resource = PostResource | HtmlResource | RawResource;
 
 export const get_name_of_Resource = (res: Resource) =>
   res.metadata.name ?? isoRoute.unwrap(res.route);
@@ -170,8 +175,8 @@ export type ResourceBase = {
   metadata: ResourceMetadata;
 };
 
-export type MarkdownResource = ResourceBase & {
-  type: "markdown";
+export type PostResource = ResourceBase & {
+  type: "post";
   root: mdast.Root;
 };
 
@@ -181,12 +186,17 @@ export type HtmlResource = ResourceBase & {
 };
 
 export type ResourceMetadata = z.infer<typeof schemaResourceMetadata>;
-export const schemaResourceMetadata = z.object({
-  name: z.optional(z.string()),
-  pubDate: z.optional(z.string()),
-  tags: z.optional(z.array(z.string())),
-  abstract: z.optional(z.string()),
-});
+export const schemaResourceMetadata = z
+  .object({
+    name: z.optional(z.string()),
+    pubDate: z.optional(z.string()),
+    tags: z.optional(z.array(z.string())),
+    abstract: z.optional(z.string()),
+  })
+  .transform((md) => {
+    const extra: { abstract_markdown?: mdast.Root } = {};
+    return { ...md, ...extra };
+  });
 
 export type RawResource = ResourceBase & {
   type: "raw";

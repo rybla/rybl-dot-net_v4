@@ -34,7 +34,7 @@ export const analyzeWebsite: ef.T<{
   await ef.run({ label: "individual processing" }, () => async (ctx) => {
     for (const res of input.website.resources) {
       await ef.run({ label: `route: ${res.route}` }, () => async (ctx) => {
-        if (res.type === "markdown") {
+        if (res.type === "post") {
           await ef.all({
             opts: {},
             input: {},
@@ -108,7 +108,7 @@ export const analyzeWebsite: ef.T<{
     for (const thisRes of input.website.resources) {
       await ef.run({ label: `route: ${thisRes.route}` }, () => async (ctx) => {
         switch (thisRes.type) {
-          case "markdown": {
+          case "post": {
             const backlinks: mutation.Backlink[] = [];
             for (const otherRes of input.website.resources) {
               if (
@@ -149,7 +149,7 @@ export const analyzeWebsite: ef.T<{
     () => async (ctx) => {
       for (const res of input.website.resources) {
         await ef.run({ label: `route: ${res.route}` }, () => async (ctx) => {
-          if (res.type === "markdown") {
+          if (res.type === "post") {
             await mutation.addReferencesSection({
               root: res.root,
               resources: input.website.resources,

@@ -87,3 +87,21 @@ export const dedupInPlace = <A>(xs: A[], getId: (x: A) => string): void => {
   }
   xs.length = writeIndex;
 };
+
+declare global {
+  interface Array<T> {
+    filterMap<B>(this: Array<T>, f: (x: T) => B | undefined): Array<B>;
+  }
+}
+
+Array.prototype.filterMap = function <T, B>(
+  this: T[],
+  f: (x: T) => B | undefined,
+) {
+  const ys: B[] = [];
+  for (const x of this) {
+    const y = f(x);
+    if (y !== undefined) ys.push(y);
+  }
+  return ys;
+};

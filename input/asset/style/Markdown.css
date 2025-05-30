@@ -324,10 +324,22 @@ h6 {
     margin: 0;
     padding: 0.5em;
 
-    line-height: 1.5em;
+    /* line-height: 1.5em; */
+    line-height: 1em;
 
     background: var(--accent--background);
     color: var(--accent--foreground);
+
+    & > a {
+        background: none;
+        box-shadow: none;
+
+        &:hover {
+            background: none;
+            box-shadow: 0 -0.1em 0 0
+                color-mix(in hsl, var(--body--foreground), transparent 0%) inset;
+        }
+    }
 }
 
 .containerDirective_thumbnail {
