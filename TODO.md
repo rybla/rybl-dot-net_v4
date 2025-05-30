@@ -1,8 +1,9 @@
 # TODO
 
 - [ ] Tags page
-  - [ ] table on contents
-- [ ] About apge
+  - [x] table on contents
+  - [ ] tag heading style :target
+- [ ] About page
 - [ ] css for making the heading of a section stay at the top of the section when you're scrolling
 - [ ] for posts, instead of post title as the resource title that goes in the Top, put a hash of the content, since that looks more cool
 - [ ] Footer

@@ -53,7 +53,7 @@ export default async function TagsPage(props: {
         {tags.map((tag) => {
           return (
             <>
-              <h2 class="heading">
+              <h2 class="heading" id={tag}>
                 <Tag tag={tag} />
               </h2>
               {mapTagsToPreviews.get(tag)!.map((preview) => (
