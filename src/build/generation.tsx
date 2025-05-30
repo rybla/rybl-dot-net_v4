@@ -2,25 +2,15 @@ import * as ef from "@/ef";
 import {
   config,
   get_name_of_Resource,
-  isoRoute,
   type PostResource,
-  type PromiseElement,
   type Resource,
   type Website,
 } from "@/ontology";
 import { render_jsx } from "@/util";
-import * as hast from "hast";
-import rehypeFormat from "rehype-format";
-import rehypeStringify from "rehype-stringify";
-import remarkRehype from "remark-rehype";
-import { unified } from "unified";
-import Top from "./component/Top";
-import rehypeMathJaxSvg from "rehype-mathjax/svg";
 import IndexPage from "./component/IndexPage";
-import Html from "@kitajs/html";
 import Markdown from "./component/Markdown";
-import PostPreview from "./component/PostPreview";
 import TagsPage from "./component/TagsPage";
+import Top from "./component/Top";
 
 export const generateWebsite: ef.T<{
   website: Website;
@@ -28,6 +18,7 @@ export const generateWebsite: ef.T<{
   await useStyles({})(ctx);
   await useIcons({})(ctx);
   await useImages({})(ctx);
+  await useFonts({})(ctx);
   await generatePages({ website: input.website })(ctx);
   await generateResources({ resources: input.website.resources })(ctx);
 });
@@ -62,6 +53,20 @@ const useImages: ef.T = ef.run({ label: "useImages" }, () => async (ctx) => {
     opts: {},
     input: {},
     ks: routes_of_images.map((route) =>
+      ef.run({}, () => ef.useLocalFile({ input: route })),
+    ),
+  })(ctx);
+});
+
+const useFonts: ef.T = ef.run({ label: "useFonts" }, () => async (ctx) => {
+  const routes_of_fonts = await ef.getSubRoutes({
+    route: config.route_of_fonts,
+  })(ctx);
+
+  await ef.all({
+    opts: {},
+    input: {},
+    ks: routes_of_fonts.map((route) =>
       ef.run({}, () => ef.useLocalFile({ input: route })),
     ),
   })(ctx);

@@ -4,6 +4,7 @@
   "type": "module",
   "dependencies": {
     "@kitajs/html": "^4.2.9",
+    "date-fns": "^4.1.0",
     "express": "^5.1.0",
     "highlight.js": "^11.11.1",
     "http-server": "^14.1.1",
@@ -26,7 +27,7 @@
     "unified": "^11.0.5",
     "unist-util-visit": "^5.0.0",
     "yaml": "^2.8.0",
-    "zod": "^3.25.7"
+    "zod": "^3.25.42"
   },
   "devDependencies": {
     "@kitajs/ts-html-plugin": "^4.1.1",

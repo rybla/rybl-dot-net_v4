@@ -3,7 +3,7 @@ import { do_, encodeURIComponent_better, indentString } from "@/util";
 import * as fsSync from "fs";
 import * as fs from "fs/promises";
 import path from "path";
-import { z } from "zod";
+import { z } from "zod/v4";
 import {
   config,
   isoFilepath,
@@ -269,8 +269,8 @@ export const defined: <A>(
 };
 
 export const successfulSafeParse =
-  <Input, Output>(x: z.SafeParseReturnType<Input, Output>) =>
-  async (ctx: Ctx.T): Promise<Output> => {
+  <A>(x: z.ZodSafeParseResult<A>) =>
+  async (ctx: Ctx.T): Promise<A> => {
     if (x.success) {
       return x.data;
     } else {

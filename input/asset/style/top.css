@@ -24,7 +24,11 @@ body {
 
     font-family: Spectral, serif;
     font-size: 14pt;
-    line-height: 1.5em;
+
+    /* line-height: 2em; */
+    line-height: 1.75em;
+    /* line-height: 1.5em; */
+    /* line-height: 1em; */
 }
 
 main {
@@ -39,8 +43,4 @@ main {
 
 code {
     font-family: Iosevka, monospace;
-}
-
-*:target {
-    box-shadow: var(--target--box-shadow);
 }

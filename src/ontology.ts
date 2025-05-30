@@ -3,7 +3,8 @@ import { do_, encodeURIComponent_better } from "@/util";
 import * as mdast from "mdast";
 import { iso, type Newtype } from "newtype-ts";
 import path from "path";
-import { z } from "zod";
+import { z } from "zod/v4";
+import * as date_fns from "date-fns";
 
 export type PromiseElement = Promise<string>;
 
@@ -53,10 +54,7 @@ export const schemaFilepath = z
 export const joinFilepaths = (...xs: Filepath[]): Filepath =>
   schemaFilepath.parse(path.join(...xs.map((x) => isoFilepath.unwrap(x))));
 
-export const schemaURL = z
-  .string()
-  .url()
-  .transform((s) => new URL(s));
+export const schemaURL = z.url().transform((s) => new URL(s));
 
 export type HrefUnion =
   | { type: "route"; value: Route }
@@ -185,16 +183,33 @@ export type HtmlResource = ResourceBase & {
   content: string;
 };
 
+export type ParsedDate = z.infer<typeof schemaParsedDate>;
+export const schemaParsedDate = z.string().transform((s) => {
+  type ParsedDate =
+    | { readonly type: "ok"; readonly value: Date }
+    | { readonly type: "error"; readonly value: string };
+  const d = new Date();
+  for (const f of config.dateFormats_parse) {
+    const candidate = date_fns.parse(s, f, d);
+    if (date_fns.isValid(candidate))
+      return { type: "ok", value: candidate } as ParsedDate;
+  }
+  return { type: "error", value: s } as ParsedDate;
+});
+
 export type ResourceMetadata = z.infer<typeof schemaResourceMetadata>;
 export const schemaResourceMetadata = z
   .object({
     name: z.optional(z.string()),
-    pubDate: z.optional(z.string()),
+    publishDate: z.optional(schemaParsedDate),
+    updateDate: z.optional(schemaParsedDate),
     tags: z.optional(z.array(z.string())),
     abstract: z.optional(z.string()),
   })
   .transform((md) => {
-    const extra: { abstract_markdown?: mdast.Root } = {};
+    const extra: {
+      abstract_markdown?: mdast.Root;
+    } = {};
     return { ...md, ...extra };
   });
 
@@ -337,5 +352,9 @@ export const config = do_(() => {
     route_of_styles: schemaRoute.parse("/asset/style"),
     route_of_icons: schemaRoute.parse("/asset/icon"),
     route_of_images: schemaRoute.parse("/asset/image"),
+    route_of_fonts: schemaRoute.parse("/asset/font"),
+
+    dateFormats_parse: ["yyyy-mm-dd", "yyyy/mm/dd", "MMM dd, yyyy"],
+    dateFormat_print: "MMM dd, yyyy",
   };
 });

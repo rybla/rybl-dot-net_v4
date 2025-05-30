@@ -1,0 +1,7 @@
+.ParsedDate {
+    color: blue;
+
+    &.error {
+        color: red;
+    }
+}

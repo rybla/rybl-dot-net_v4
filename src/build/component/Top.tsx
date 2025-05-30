@@ -24,11 +24,12 @@ export default function Top(props: {
           <link rel="stylesheet" href="/asset/style/common.css" />
           <link rel="stylesheet" href="/asset/style/util.css" />
           <link rel="stylesheet" href="/asset/style/Top.css" />
+          <link rel="stylesheet" href="/asset/style/Tag.css" />
+          <link rel="stylesheet" href="/asset/style/ParsedDate.css" />
           <link rel="stylesheet" href="/asset/style/Header.css" />
           <link rel="stylesheet" href="/asset/style/Footer.css" />
           <link rel="stylesheet" href="/asset/style/Raindrops.css" />
           <link rel="stylesheet" href="/asset/style/Markdown.css" />
-          <link rel="stylesheet" href="/asset/style/Tag.css" />
           {props.content_head as "safe"}
         </head>
         <body>

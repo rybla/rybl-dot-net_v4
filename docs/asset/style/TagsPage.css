@@ -30,6 +30,13 @@ main {
                     backdrop-filter: unset;
                 }
             }
+
+            &:target {
+                /* font-weight: bold; */
+                & > .Tag {
+                    font-weight: bold;
+                }
+            }
         }
 
         & > .preview {

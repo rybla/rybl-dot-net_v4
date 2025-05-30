@@ -15,8 +15,6 @@
 
     --link--background: var(--highlight--color);
 
-    --target--box-shadow: 0 -0.1em black inset;
-
     --accent--background: color-mix(
         in hsl,
         var(--primary--color),
@@ -44,42 +42,42 @@
 
 @font-face {
     font-family: Spectral;
-    src: url("Spectral-Regular.ttf") format("truetype");
+    src: url("/asset/font/Spectral-Regular.ttf") format("truetype");
     font-weight: normal;
     font-style: normal;
 }
 
 @font-face {
     font-family: Spectral;
-    src: url("Spectral-Italic.ttf") format("truetype");
+    src: url("/asset/font/Spectral-Italic.ttf") format("truetype");
     font-weight: normal;
     font-style: italic;
 }
 
 @font-face {
     font-family: Spectral;
-    src: url("Spectral-Bold.ttf") format("truetype");
+    src: url("/asset/font/Spectral-Bold.ttf") format("truetype");
     font-weight: bold;
     font-style: normal;
 }
 
 @font-face {
     font-family: Spectral;
-    src: url("Spectral-BoldItalic.ttf") format("truetype");
+    src: url("/asset/font/Spectral-BoldItalic.ttf") format("truetype");
     font-weight: bold;
     font-style: italic;
 }
-
+/*
 @font-face {
     font-family: Iosevka;
-    src: url("Iosevka-Regular.ttc") format("truetype");
+    src: url("/asset/font/Iosevka-Regular.ttc") format("truetype");
     font-weight: normal;
     font-style: normal;
 }
 
 @font-face {
     font-family: Iosevka;
-    src: url("Iosevka-Bold.ttc") format("truetype");
+    src: url("/asset/font/Iosevka-Bold.ttc") format("truetype");
     font-weight: bold;
     font-style: normal;
-}
+} */

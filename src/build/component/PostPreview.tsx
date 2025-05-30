@@ -6,7 +6,7 @@ import {
   type Resource,
 } from "@/ontology";
 import Tag from "./Tag";
-import Date from "./Date";
+import ParsedDate from "./ParsedDate";
 import Markdown from "./Markdown";
 
 export default async function PostPreview(props: {
@@ -32,11 +32,11 @@ export default async function PostPreview(props: {
       ) : (
         <></>
       )}
-      {props.resource.metadata.pubDate !== undefined ? (
+      {props.resource.metadata.publishDate !== undefined ? (
         <div class="pubDate">
           <div class="label">Published.</div>
           <div class="value">
-            <Date date={props.resource.metadata.pubDate} />
+            <ParsedDate parsedDate={props.resource.metadata.publishDate} />
           </div>
         </div>
       ) : (

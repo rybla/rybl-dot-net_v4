@@ -1,6 +1,6 @@
 # TODO
 
-- [ ] Tags page
+- [x] Tags page
   - [x] table on contents
   - [ ] tag heading style :target
 - [ ] About page
