@@ -8,7 +8,7 @@ export type Record = { [key: string]: any };
 
 export const do_ = <A>(k: () => A) => k();
 
-export const indentation = (level: number) => "│ ".repeat(level * 2);
+export const indentation = (level: number) => "│   ".repeat(level);
 
 export const indentString = (level: number, s: string) => {
   const i = indentation(level);
