@@ -314,9 +314,9 @@ export const config = do_(() => {
     // useful URLs
     url_of_github: new URL("https://github.com/rybla/"),
 
-    route_of_Index: schemaRoute.parse("/index.html"),
-    route_of_Tags: schemaRoute.parse("/Tags.html"),
-    route_of_About: schemaRoute.parse("/About.html"),
+    route_of_IndexPage: schemaRoute.parse("/index.html"),
+    route_of_TagsPage: schemaRoute.parse("/Tags.html"),
+    route_of_AboutPage: schemaRoute.parse("/About.html"),
 
     route_of_profileImage: schemaRoute.parse("/asset/image/profile.png"),
 

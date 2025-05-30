@@ -1,0 +1,12 @@
+main {
+    .previews {
+        display: flex;
+        flex-direction: column;
+        gap: 1em;
+
+        & > .preview {
+            background: var(--panel--background);
+            backdrop-filter: var(--panel--backdrop-filter);
+        }
+    }
+}

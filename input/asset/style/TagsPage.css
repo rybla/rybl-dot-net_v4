@@ -5,6 +5,7 @@ main {
         gap: 1em;
 
         & > .heading {
+            background: none;
             backdrop-filter: invert(100%);
 
             padding: 0.5em;
@@ -31,7 +32,7 @@ main {
             }
         }
 
-        & > .item {
+        & > .preview {
             background: var(--panel--background);
             backdrop-filter: var(--panel--backdrop-filter);
         }

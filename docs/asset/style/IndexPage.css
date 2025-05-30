@@ -4,7 +4,7 @@ main {
         flex-direction: column;
         gap: 1em;
 
-        & > .item {
+        & > .preview {
             background: var(--panel--background);
             backdrop-filter: var(--panel--backdrop-filter);
         }

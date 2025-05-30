@@ -16,10 +16,11 @@ import remarkRehype from "remark-rehype";
 import { unified } from "unified";
 import Top from "./component/Top";
 import rehypeMathJaxSvg from "rehype-mathjax/svg";
-import Index from "./component/Index";
+import IndexPage from "./component/IndexPage";
 import Html from "@kitajs/html";
 import Markdown from "./component/Markdown";
 import PostPreview from "./component/PostPreview";
+import TagsPage from "./component/TagsPage";
 
 export const generateWebsite: ef.T<{
   website: Website;
@@ -71,31 +72,32 @@ const generatePages: ef.T<{ website: Website }> = ef.run(
   (input) => async (ctx) => {
     await ef.all({
       opts: {},
-      input: {},
-      ks: [
-        ef.run({ label: "generateIndex" }, () => async (ctx) => {
-          const previews: JSX.Element[] = await ef.all<{}, JSX.Element>({
-            opts: {},
-            input: {},
-            ks: input.website.resources.filterMap<ef.T<{}, JSX.Element>>(
-              (res) => {
-                switch (res.type) {
-                  case "post": {
-                    return ef.run({}, () => async (ctx) => (
-                      <PostPreview ctx={ctx} resource={res} />
-                    ));
-                  }
-                }
-              },
-            ),
-          })(ctx);
+      input: { website: input.website },
+      ks: [generateIndexPage, generateTagsPage],
+    })(ctx);
+  },
+);
 
-          await ef.setRoute_textFile({
-            route: config.route_of_Index,
-            content: await render_jsx(<Index previews={previews} />),
-          })(ctx);
-        }),
-      ],
+const generateIndexPage: ef.T<{ website: Website }> = ef.run(
+  { label: "generateIndexPage" },
+  (input) => async (ctx) => {
+    await ef.setRoute_textFile({
+      route: config.route_of_IndexPage,
+      content: await render_jsx(
+        <IndexPage ctx={ctx} resources={input.website.resources} />,
+      ),
+    })(ctx);
+  },
+);
+
+const generateTagsPage: ef.T<{ website: Website }> = ef.run(
+  { label: "generateTagsPage" },
+  (input) => async (ctx) => {
+    await ef.setRoute_textFile({
+      route: config.route_of_TagsPage,
+      content: await render_jsx(
+        <TagsPage ctx={ctx} resources={input.website.resources} />,
+      ),
     })(ctx);
   },
 );

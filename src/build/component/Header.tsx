@@ -19,13 +19,13 @@ export default function Header(props: { resource_name: string }) {
         </div>
       </div>
       <div class="menu">
-        <a href={isoRoute.unwrap(config.route_of_Index)} class="item">
+        <a href={isoRoute.unwrap(config.route_of_IndexPage)} class="item">
           <Icon.Library />
         </a>
-        <a href={isoRoute.unwrap(config.route_of_Tags)} class="item">
+        <a href={isoRoute.unwrap(config.route_of_TagsPage)} class="item">
           <Icon.Tag />
         </a>
-        <a href={isoRoute.unwrap(config.route_of_About)} class="item">
+        <a href={isoRoute.unwrap(config.route_of_AboutPage)} class="item">
           <Icon.Info />
         </a>
         <a href={config.url_of_github.href} class="item">
