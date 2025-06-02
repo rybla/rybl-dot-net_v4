@@ -3,7 +3,7 @@ type: post
 tags:
   - technology
 abstract:
-  YouTube is hugely dominant in the market of general public video hosting. Why
+  YouTube is _hugely_ dominant in the market of general public video hosting. Why
   is YouTube so dominant, how should new competators take on YouTube, and will
   YouTube maintain its dominance over the next 10 years?
 ---

@@ -1,4 +1,5 @@
 import * as homomorphism from "@/build/analysis/homomorphism";
+import * as mdast from "mdast";
 import * as mutation from "@/build/analysis/mutation";
 import * as ef from "@/ef";
 import {
@@ -20,8 +21,13 @@ import {
 } from "@/ontology";
 import { showNode } from "@/unified_util";
 import { dedup, dedupInPlace, do_ } from "@/util";
+import remarkFrontmatter from "remark-frontmatter";
+import { unified } from "unified";
 import { visit } from "unist-util-visit";
 import * as YAML from "yaml";
+import remarkParse from "remark-parse";
+import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
 
 export const analyzeWebsite: ef.T<{
   website: Website;
@@ -29,56 +35,84 @@ export const analyzeWebsite: ef.T<{
   const references_global: Reference[] = [];
 
   // TODO: expand directives
+  // TODO: do other plugins for processing like
 
   await ef.run({ label: "individual processing" }, () => async (ctx) => {
     for (const res of input.website.resources) {
       await ef.run({ label: `route: ${res.route}` }, () => async (ctx) => {
         if (res.type === "post") {
-          await ef.all({
-            opts: {},
-            input: {},
-            ks: do_(() => {
-              const ks: ef.T[] = [];
-              visit(res.root, (node) => {
-                ks.push(
-                  ef.run({}, () => async (ctx) => {
-                    switch (node.type) {
-                      //
-                      case "textDirective": {
-                        break;
-                      }
-                      //
-                      case "image": {
-                        const href = await ef.successfulSafeParse(
-                          schemaHref.safeParse(node.url),
-                        )(ctx);
-                        const ref = from_Href_to_Reference(href);
-                        res.references.push(ref);
-                        references_global.push(ref);
-                        break;
-                      }
-                      //
-                      case "link": {
-                        // convert all fragment hrefs to full hrefs
-                        if (node.url.startsWith("#")) {
-                          node.url = `${res.route}/${node.url}`;
-                        }
+          const ks: ef.T[] = [];
 
-                        const href = await ef.successfulSafeParse(
-                          schemaHref.safeParse(node.url),
-                        )(ctx);
-                        const ref = from_Href_to_Reference(href);
-                        res.references.push(ref);
-                        references_global.push(ref);
-                        break;
-                      }
-                    }
-                  }),
-                );
+          // sequential processing
+          unified()
+            .use(() => (root: mdast.Root) => {
+              visit(root, (node) => {
+                if (node.type === "yaml") {
+                  const frontmatter = YAML.parse(node.value);
+                  res.metadata = schemaResourceMetadata.parse(frontmatter);
+                  if (res.metadata.abstract !== undefined) {
+                    res.metadata.abstract_markdown = unified()
+                      .use(remarkParse)
+                      .parse(res.metadata.abstract);
+                    ks.push(
+                      ef.run({}, () => async (ctx) => {
+                        await unified()
+                          .use(remarkGfm)
+                          // TODO: allow for Directives in abstracts?
+                          // .use(remarkDirective)
+                          .use(remarkMath, { singleDollarTextMath: false })
+                          .run(res.metadata.abstract_markdown!);
+                      }),
+                    );
+                  }
+                } else if (node.type === "heading" && node.depth === 1) {
+                  res.metadata.name = showNode(node);
+                }
               });
-              return ks;
-            }),
-          })(ctx);
+            })
+            .run(res.root);
+
+          // queue up for parallel processing
+          visit(res.root, (node) => {
+            ks.push(
+              ef.run({}, () => async (ctx) => {
+                switch (node.type) {
+                  //
+                  case "textDirective": {
+                    break;
+                  }
+                  //
+                  case "image": {
+                    const href = await ef.successfulSafeParse(
+                      schemaHref.safeParse(node.url),
+                    )(ctx);
+                    const ref = from_Href_to_Reference(href);
+                    res.references.push(ref);
+                    references_global.push(ref);
+                    break;
+                  }
+                  //
+                  case "link": {
+                    // convert all fragment hrefs to full hrefs
+                    if (node.url.startsWith("#")) {
+                      node.url = `${res.route}/${node.url}`;
+                    }
+
+                    const href = await ef.successfulSafeParse(
+                      schemaHref.safeParse(node.url),
+                    )(ctx);
+                    const ref = from_Href_to_Reference(href);
+                    res.references.push(ref);
+                    references_global.push(ref);
+                    break;
+                  }
+                }
+              }),
+            );
+          });
+
+          // execute parallel processing
+          await ef.all({ opts: {}, input: {}, ks })(ctx);
 
           dedupInPlace(res.references, (x) =>
             isoHref.unwrap(from_Reference_to_Href(x)),

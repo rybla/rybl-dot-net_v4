@@ -7,6 +7,7 @@
 - [ ] links to local posts using `[[NAME]]` syntax
 - [ ] BUG: for _only_ deepest node in table of contents tree, there's no paragraph wrapped around the link??
 
+- [x] make sure that math and other plugins are being activated
 - [x] Tags page
   - [x] table on contents
 - [x] PostPreview (e.g. for use in Index and Tags pages)
