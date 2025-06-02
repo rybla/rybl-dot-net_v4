@@ -1,5 +1,6 @@
 # TODO
 
+- [ ] fix when sometimes downloads a bad file for the icon
 - [ ] About page
 - [ ] css for making the heading of a section stay at the top of the section when you're scrolling
 - [ ] for posts, instead of post title as the resource title that goes in the Top, put a hash of the content, since that looks more cool
