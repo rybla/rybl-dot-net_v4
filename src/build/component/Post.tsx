@@ -1,5 +1,6 @@
 import * as ef from "@/ef";
 import {
+  get_hash_of_Resource,
   get_name_of_Resource,
   type PostResource,
   type PromiseElement,
@@ -14,6 +15,7 @@ export default async function Post(props: {
   return (
     <Top
       resource_name={get_name_of_Resource(props.resource)}
+      resource_shortname={`#${get_hash_of_Resource(props.resource)}`}
       content_head={
         <>
           <link rel="stylesheet" href="/asset/style/Post.css" />

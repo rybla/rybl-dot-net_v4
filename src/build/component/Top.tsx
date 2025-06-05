@@ -5,6 +5,7 @@ import { config } from "@/ontology";
 
 export default function Top(props: {
   resource_name: string;
+  resource_shortname: string;
   content_head?: JSX.Element;
   children: HTML.Children;
 }): JSX.Element {
@@ -34,7 +35,7 @@ export default function Top(props: {
         </head>
         <body>
           <Raindrops />
-          <Header resource_name={props.resource_name} />
+          <Header resource_name={props.resource_shortname} />
           <main>{props.children}</main>
           <Footer />
         </body>

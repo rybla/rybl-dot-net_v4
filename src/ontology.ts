@@ -5,6 +5,7 @@ import { iso, type Newtype } from "newtype-ts";
 import path from "path";
 import { z } from "zod/v4";
 import * as date_fns from "date-fns";
+import { hash } from "bun";
 
 export type PromiseElement = Promise<string>;
 
@@ -164,6 +165,17 @@ export type Resource = PostResource | HtmlResource | RawResource;
 export const get_name_of_Resource = (res: Resource) =>
   res.metadata.name ?? isoRoute.unwrap(res.route);
 
+export const get_hash_of_Resource = (res: Resource) => {
+  switch (res.type) {
+    case "post":
+      return hash(JSON.stringify(res.root));
+    case "html":
+      return hash(res.content);
+    case "raw":
+      return hash(res.content);
+  }
+};
+
 /**
  * A type common to all {@link Resource}s.
  */
@@ -215,6 +227,7 @@ export const schemaResourceMetadata = z
 
 export type RawResource = ResourceBase & {
   type: "raw";
+  content: string;
 };
 
 export type Reference =

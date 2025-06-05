@@ -39,6 +39,7 @@ export default async function IndexPage(props: {
   return (
     <Top
       resource_name="Index"
+      resource_shortname="Index"
       content_head={
         <>
           <link rel="stylesheet" href="/asset/style/IndexPage.css" />

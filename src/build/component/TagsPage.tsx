@@ -42,6 +42,7 @@ export default async function TagsPage(props: {
   return (
     <Top
       resource_name="Tags"
+      resource_shortname="Tags"
       content_head={
         <>
           <link rel="stylesheet" href="/asset/style/TagsPage.css" />
