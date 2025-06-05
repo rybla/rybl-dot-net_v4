@@ -50,7 +50,7 @@ sup {
 
 p {
     margin: 0;
-    padding: 0 0.5em;
+    padding: 0 0.5rem;
 }
 
 p:has(> img) {
@@ -59,7 +59,7 @@ p:has(> img) {
 
 hr {
     width: 100%;
-    height: 0.2em;
+    height: 0.2rem;
     border: none;
     background-color: var(--body--foreground);
 }
@@ -69,8 +69,8 @@ img {
 }
 
 pre {
-    padding: 0.5em;
-    border-left: 0.5em solid var(--container--border--color);
+    padding: 0.5rem;
+    border-left: 0.5rem solid var(--container--border--color);
     background: var(--container--background);
 
     font-size: 1em;
@@ -88,9 +88,9 @@ code {
 }
 
 blockquote {
-    margin: 0.5em;
+    margin: 0.5rem;
     padding: 0;
-    border-left: 0.5em solid var(--container--border--color);
+    border-left: 0.5rem solid var(--container--border--color);
 }
 
 ul,
@@ -108,12 +108,12 @@ table {
     }
 
     th {
-        padding: 0.5em;
+        padding: 0.5rem;
         background: var(--container-accent--background);
     }
 
     td {
-        padding: 0.5em;
+        padding: 0.5rem;
         background: var(--container--background);
     }
 }
@@ -128,17 +128,18 @@ h4,
 h5,
 h6 {
     top: 0;
-    /* TODO: why was this here? */
+    /* this was for sticky headings */
     /* z-index: 1; */
 
     margin: 0;
-    padding: 0.5em;
+    /* padding: 0.5rem;  */
+    padding: 0 0.5rem;
 
     line-height: 1.5em;
     /* line-height: 1em; */
 
-    background: var(--accent--background);
-    color: var(--accent--foreground);
+    /* background: var(--accent--background);
+    color: var(--accent--foreground); */
 
     & > a {
         background: none;
@@ -149,6 +150,11 @@ h6 {
             box-shadow: 0 -0.1em 0 0
                 color-mix(in hsl, var(--body--foreground), transparent 0%) inset;
         }
+    }
+
+    &:target > a {
+        box-shadow: 0 -0.1em 0 0
+            color-mix(in hsl, var(--body--foreground), transparent 0%) inset;
     }
 }
 

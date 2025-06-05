@@ -36,9 +36,10 @@
     );
 
     /* TODO: consider using a light transparent background color rather than invert backdrop filter */
-    /* --panel--background: color-mix(in hsl, white, transparent 60%); */
-    --panel--background: transparent;
+    --panel--background: color-mix(in hsl, white, transparent 50%);
+    /* --panel--background: transparent; */
     --panel--backdrop-filter: invert(80%) blur(4px);
+    /* --panel--backdrop-filter: blur(4px); */
 }
 
 @font-face {
