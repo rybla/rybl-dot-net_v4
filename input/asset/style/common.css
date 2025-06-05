@@ -9,11 +9,12 @@
     --primary--color: #945600;
     --secondary--color: #63a088;
     --darkest--color: #2a2f3c;
-    --highlight--color: #ffbc42;
+    --highlight--color: #8980f5;
     --neutral--color: #eadeda;
     --body--background: transparent;
     --body--foreground: black;
 
+    /* --link--background: var(--highlight--color); */
     --link--background: var(--highlight--color);
 
     --accent--background: color-mix(

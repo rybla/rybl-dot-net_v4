@@ -17,18 +17,15 @@ main {
                 background: none;
                 box-shadow: none;
                 backdrop-filter: unset;
+            }
 
-                &:hover {
-                    background: none;
-                    box-shadow: 0 -0.1em 0 0
-                        color-mix(
-                            in hsl,
-                            var(--body--foreground),
-                            transparent 0%
-                        )
-                        inset;
-                    backdrop-filter: unset;
-                }
+            &:target > .Tag,
+            .Tag:hover {
+                background: none;
+                box-shadow: 0 -0.1em 0 0
+                    color-mix(in hsl, var(--body--foreground), transparent 0%)
+                    inset;
+                backdrop-filter: unset;
             }
         }
 

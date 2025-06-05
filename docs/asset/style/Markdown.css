@@ -138,21 +138,17 @@ h6 {
     line-height: 1.5em;
     /* line-height: 1em; */
 
-    background: var(--accent--background);
+    background: color-mix(in hsl, var(--accent--background), transparent 70%);
     color: var(--accent--foreground);
 
     & > a {
         background: none;
         box-shadow: none;
-
-        &:hover {
-            background: none;
-            box-shadow: 0 -0.1em 0 0
-                color-mix(in hsl, var(--body--foreground), transparent 0%) inset;
-        }
     }
 
+    & > a:hover,
     &:target > a {
+        background: none;
         box-shadow: 0 -0.1em 0 0
             color-mix(in hsl, var(--body--foreground), transparent 0%) inset;
     }
