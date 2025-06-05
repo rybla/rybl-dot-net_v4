@@ -132,8 +132,8 @@ h6 {
     /* z-index: 1; */
 
     margin: 0;
-    /* padding: 0.5rem;  */
-    padding: 0 0.5rem;
+    padding: 0.5rem;
+    /* padding: 0 0.5rem; */
 
     line-height: 1.5em;
     /* line-height: 1em; */
