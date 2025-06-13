@@ -9,6 +9,8 @@ import { render_jsx } from "@/util";
 import IndexPage from "./component/IndexPage";
 import Post from "./component/Post";
 import TagsPage from "./component/TagsPage";
+import AboutPage from "./component/AboutPage";
+import ProfilesPage from "./component/ProfilesPage";
 
 export const generateWebsite: ef.T<{
   website: Website;
@@ -109,7 +111,12 @@ const generatePages: ef.T<{ website: Website }> = ef.run(
     await ef.all({
       opts: {},
       input: { website: input.website },
-      ks: [generateIndexPage, generateTagsPage],
+      ks: [
+        generateIndexPage,
+        generateTagsPage,
+        generateAboutPage,
+        generateProfilesPage,
+      ],
     })(ctx);
   },
 );
@@ -133,6 +140,30 @@ const generateTagsPage: ef.T<{ website: Website }> = ef.run(
       route: config.route_of_TagsPage,
       content: await render_jsx(
         <TagsPage ctx={ctx} resources={input.website.resources} />,
+      ),
+    })(ctx);
+  },
+);
+
+const generateAboutPage: ef.T<{ website: Website }> = ef.run(
+  { label: "generateAboutPage" },
+  (input) => async (ctx) => {
+    await ef.setRoute_textFile({
+      route: config.route_of_AboutPage,
+      content: await render_jsx(
+        <AboutPage ctx={ctx} website={input.website} />,
+      ),
+    })(ctx);
+  },
+);
+
+const generateProfilesPage: ef.T<{ website: Website }> = ef.run(
+  { label: "generateProfilesPage" },
+  (input) => async (ctx) => {
+    await ef.setRoute_textFile({
+      route: config.route_of_ProfilesPage,
+      content: await render_jsx(
+        <ProfilesPage ctx={ctx} website={input.website} />,
       ),
     })(ctx);
   },
