@@ -6,7 +6,7 @@ header {
 
     display: flex;
     flex-direction: column;
-    gap: 0.2em;
+    gap: 0.5em;
     align-items: stretch;
     justify-content: stretch;
 
@@ -94,12 +94,23 @@ header {
         justify-content: center;
         gap: 1em;
 
-        & > a {
+        & > .item {
+            width: 1em;
             /* this is needed since there's no text in the row */
             padding-bottom: 0.2em;
 
-            /* color: white; */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+
+            /* line-height: 0; */
+
             color: black;
+
+            svg {
+                margin: 0;
+                padding: 0;
+            }
         }
     }
 }

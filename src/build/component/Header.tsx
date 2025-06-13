@@ -28,8 +28,8 @@ export default function Header(props: { resource_name: string }) {
         <a href={isoRoute.unwrap(config.route_of_AboutPage)} class="item">
           <Icon.Info />
         </a>
-        <a href={config.url_of_github.href} class="item">
-          <Icon.GitHub />
+        <a href={isoRoute.unwrap(config.route_of_ProfilesPage)} class="item">
+          <Icon.Globe />
         </a>
       </div>
     </header>

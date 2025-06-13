@@ -21,7 +21,6 @@ import {
 } from "@/ontology";
 import { showNode } from "@/unified_util";
 import { dedup, dedupInPlace, do_ } from "@/util";
-import remarkFrontmatter from "remark-frontmatter";
 import { unified } from "unified";
 import { visit } from "unist-util-visit";
 import * as YAML from "yaml";
@@ -196,6 +195,17 @@ export const analyzeWebsite: ef.T<{
               route: res.route,
               root: res.root,
             })(ctx);
+
+            if (
+              res.metadata.name !== undefined &&
+              res.metadata.nameImage !== undefined
+            ) {
+              await mutation.addNameImage({
+                root: res.root,
+                name: res.metadata.name,
+                nameImage: res.metadata.nameImage,
+              })(ctx);
+            }
 
             // process abstract
             if (res.metadata.abstract_markdown !== undefined) {

@@ -6,6 +6,7 @@ tags:
 publishDate: 2023/06/06
 abstract: |
   Why does it appear to us that history proceeds in a rough trend of "moral progress" with a peak in the recent past or current?
+nameImage: aligned_intelligence_and_moral_progress.png
 ---
 
 # Aligned Intelligence and Moral Progress

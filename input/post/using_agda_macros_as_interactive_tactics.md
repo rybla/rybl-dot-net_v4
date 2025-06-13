@@ -7,6 +7,7 @@ tags:
   - interactive_theorem_proving
 abstract: |
   Interactive tactics, such as [LTac](https://rocq-prover.org/doc/v8.19/refman/proof-engine/ltac.html) in [Coq/Rocq](https://rocq-prover.org/), support an interesting and often useful workflow: to interactively run a tactic script (which can leverage metaprogramming), viewing the context and expected type of the rest of the tactic script (in a nested fashion) at each step. In this way, you as a programmer can view the intermediate states that are yielded by metaprogrammatic computations which would otherwise be inaccessible if you were only able to view the final output of the tactic script.
+nameImage: using_agda_macros_as_interactive_tactics.png
 ---
 
 # Using Agda Macros as Interactive Tactics

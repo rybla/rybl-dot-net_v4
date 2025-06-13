@@ -17,6 +17,7 @@ export const generateWebsite: ef.T<{
 }> = ef.run({ label: "generateWebsite" }, (input) => async (ctx) => {
   await useStyles({})(ctx);
   await useIcons({})(ctx);
+  await useNameImages({})(ctx);
   await useImages({})(ctx);
   await useFonts({})(ctx);
   await useScripts({})(ctx);
@@ -44,6 +45,23 @@ const useIcons: ef.T = ef.run({ label: "useIcons" }, () => async (ctx) => {
     output: config.iconRoute_of_website,
   })(ctx);
 });
+
+const useNameImages: ef.T = ef.run(
+  { label: "useTitleImages" },
+  () => async (ctx) => {
+    const routes_of_images = await ef.getSubRoutes({
+      route: config.route_of_nameImages,
+    })(ctx);
+
+    await ef.all({
+      opts: {},
+      input: {},
+      ks: routes_of_images.map((route) =>
+        ef.run({}, () => ef.useLocalFile({ input: route })),
+      ),
+    })(ctx);
+  },
+);
 
 const useImages: ef.T = ef.run({ label: "useImages" }, () => async (ctx) => {
   const routes_of_images = await ef.getSubRoutes({

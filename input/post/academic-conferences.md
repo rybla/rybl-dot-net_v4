@@ -7,6 +7,7 @@ abstract:
   particular field share their refereed results in the form of talks and
   workshops. What are the goals of such conferences, and how well do they
   achieve them in practice?
+nameImage: reflections_on_academic_conferences.png
 ---
 
 # Reflections on Academic Conferences

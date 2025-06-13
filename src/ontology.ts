@@ -217,6 +217,7 @@ export const schemaResourceMetadata = z
     updateDate: z.optional(schemaParsedDate),
     tags: z.optional(z.array(z.string())),
     abstract: z.optional(z.string()),
+    nameImage: z.optional(z.string()),
   })
   .transform((md) => {
     const extra: {
@@ -345,6 +346,7 @@ export const config = do_(() => {
     route_of_IndexPage: schemaRoute.parse("/index.html"),
     route_of_TagsPage: schemaRoute.parse("/Tags.html"),
     route_of_AboutPage: schemaRoute.parse("/About.html"),
+    route_of_ProfilesPage: schemaRoute.parse("/Profiles.html"),
 
     route_of_profileImage: schemaRoute.parse("/asset/image/profile.png"),
 
@@ -365,6 +367,7 @@ export const config = do_(() => {
     route_of_styles: schemaRoute.parse("/asset/style"),
     route_of_icons: schemaRoute.parse("/asset/icon"),
     route_of_images: schemaRoute.parse("/asset/image"),
+    route_of_nameImages: schemaRoute.parse("/asset/nameImage"),
     route_of_fonts: schemaRoute.parse("/asset/font"),
     route_of_scripts: schemaRoute.parse("/asset/script"),
 

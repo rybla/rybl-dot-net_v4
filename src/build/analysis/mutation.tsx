@@ -8,7 +8,9 @@ import {
   isoHref,
   isoRoute,
   join_Href_with_Route,
+  joinRoutes,
   schemaHref,
+  schemaRoute,
   type Reference,
   type Resource,
   type Route,
@@ -205,4 +207,28 @@ export const addBacklinksSection: ef.T<
   };
 
   input.root.children.splice(input.root.children.length, 0, heading, backlinks);
+});
+
+/**
+ * Splices nameImage right under name H1.
+ */
+export const addNameImage: ef.T<
+  { root: mdast.Root; name: string; nameImage: string },
+  void
+> = ef.run({ label: "addTitleImage" }, (input) => async (ctx) => {
+  const i_H1 = input.root.children.findIndex(
+    (node) => node.type === "heading" && node.depth === 1,
+  );
+  if (i_H1 === -1) throw new ef.EfError("in addTitleImage, did not find an H1");
+
+  input.root.children.splice(i_H1 + 1, 0, {
+    type: "image",
+    alt: input.name,
+    url: isoRoute.unwrap(
+      joinRoutes(
+        config.route_of_nameImages,
+        schemaRoute.parse(`/${input.nameImage}`),
+      ),
+    ),
+  });
 });
