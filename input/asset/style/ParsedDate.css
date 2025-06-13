@@ -1,5 +1,5 @@
 .ParsedDate {
-    color: blue;
+    /* color: blue; */
 
     &.error {
         color: red;

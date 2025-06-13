@@ -1,7 +1,6 @@
 import * as ef from "@/ef";
 import {
   config,
-  get_name_of_Resource,
   type PostResource,
   type Resource,
   type Website,
@@ -10,7 +9,6 @@ import { render_jsx } from "@/util";
 import IndexPage from "./component/IndexPage";
 import Post from "./component/Post";
 import TagsPage from "./component/TagsPage";
-import Top from "./component/Top";
 
 export const generateWebsite: ef.T<{
   website: Website;
