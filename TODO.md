@@ -8,6 +8,7 @@
   - turns out this is harder than i thoguht
 - [ ] links to local posts using `[[NAME]]` syntax
 - [ ] BUG: for _only_ deepest node in table of contents tree, there's no paragraph wrapped around the link??
+- [ ] max height for code block (and perhaps other kinds of blocks as well)
 - [x] fix when sometimes downloads a bad file for the icon
   - [ ] sometimes gets an empty file
 
